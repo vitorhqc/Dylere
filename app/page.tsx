@@ -1,103 +1,402 @@
+'use client';
+
 import Image from "next/image";
+import dynamic from "next/dynamic";
+import { useState, useEffect, useRef } from "react";
+import CodigoSucess from "./components/CodigoSuccess";
+import Acerto from "./components/Acerto";
+import AcertoSuccess from "./components/AcertoSuccess";
+import Login from "./components/Login";
+import LoginSuccess from "./components/LoginSuccess";
+import SemMercadoria from "./components/SemMercadoria";
+import Inserir from "./components/Inserir";
+import InserirSuccess from "./components/InserirOK";
+import ExcluirConfirm from "./components/ExcluirConfirm";
+
+const Leitor = dynamic(() => import('@/app/components/Leitor'), {
+  ssr: false,
+});
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const codigoInputRef = useRef<HTMLInputElement>(null);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [endereco, setEndereco] = useState({ rua: '', edi: '', andar: '', apto: '', dep: '' });
+  const [isReadOnly, setIsReadOnly] = useState(false);
+  const [leitorativo, setLeitorativo] = useState(false);
+  const [codigoEnd, setCodigoend] = useState('');
+  const [codigoLido, setCodigoLido] = useState(false);
+  const [codigoLeitor, setCodigoleitor] = useState('');
+  const [confirmation, setConfirmation] = useState(false);
+  const [mercadorias, setMercadorias] = useState<any[]>([]);
+  const [mercadoriaSelecionada, setMercadoriaSelecionada] = useState<string[]>([]);
+  const [usuarioLogado, setUsuarioLogado] = useState('');
+  const [isAcertando, setIsacertando] = useState(false);
+  const [acertook, setAcertook] = useState(false);
+  const [inserirok, setInserirok] = useState(false);
+  const [loginEfetuado, setLoginEfetuado] = useState(false);
+  const [isInserindo, setIsInserindo] = useState(false);
+  const [isExcluindo, setIsExcluindo] = useState(false);
+  const [depAceitaInserir, setdepAceitaInserir] = useState(true);
+
+  useEffect(() => {
+    if (codigoLido){
+      if (codigoInputRef.current) {
+        codigoInputRef.current.value = codigoLeitor;
+        setCodigoend(codigoLeitor);
+        setCodigoLido(false);
+        FiltrarEndereco(codigoLeitor, {rua: '', edi: '', andar: '', apto: '', dep: '' });
+        if (codigoLeitor != '') HandleConfirmationModal();
+      }
+    }
+  }, [codigoLido])
+
+  useEffect(() => {
+    console.log(usuarioLogado);
+    setLoginEfetuado(true);
+    /*setTimeout(() => {
+      setLoginEfetuado(false);
+    }, 1500);*/
+  }, [usuarioLogado])
+
+  function HandleConfirmationModal() {
+    setConfirmation(true);
+
+    setTimeout(() => {
+      setConfirmation(false);
+    }, 1500)
+  }
+
+  /*async function PostMercEndereco(codmerc = '', quant: string) {    
+    try {
+      if (isInserindo) {
+        const mercsFetch = await fetch(`/api/endereco?codend=${encodeURIComponent(codigoEnd)}&codmerc=${encodeURIComponent(codmerc)}&inserir=true`, {
+          method: 'GET'
+        });
+        const mercs = await mercsFetch.json();
+        if (mercs.length > 0) {
+          setMercadoriaSelecionada([codmerc, codigoEnd])
+        }
+        else {
+          const post = await fetch()
+        }
+      }
+    }
+    catch (err) {
+      throw new Error(`Request failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    setIsacertando(false);
+  }*/
+
+  async function AcertarQuant(codmerc = '', quant: string, fechar?: boolean) {
+    if (fechar) {
+      setIsInserindo(false);
+      setIsacertando(false);
+      return;
+    }
+    try {
+      if (isInserindo) {
+        const mercsFetch = await fetch(`/api/endereco?codend=${encodeURIComponent(codigoEnd)}&codmerc=${encodeURIComponent(codmerc)}&inserir=true`, {
+          method: 'GET'
+        });
+        const mercs = await mercsFetch.json();
+        if (mercs.length == 0) {
+          const postMerc = await fetch(`/api/endereco`, {
+            method: 'POST',
+            body: JSON.stringify({ codend: codigoEnd, codmerc: codmerc, quant: quant , insert: true})
+          });
+          if (postMerc.status != 200) {
+            console.log('Erro ao inserir mercadoria!')
+            alert('Erro ao inserir mercadoria! Verifique o código da mercadoria e tente novamente!')
+          }
+          if (!postMerc.ok) {
+            throw new Error(`Falha ao inserir mercadoria!`);
+          }
+
+          const dataPost = await postMerc.status;
+          console.log(dataPost);
+          setIsInserindo(false);
+          setInserirok(true);
+          setTimeout(() => {
+            setInserirok(false);
+          }, 1500)
+        }
+      }
+      codmerc = codmerc ? codmerc : mercadoriaSelecionada[0];
+      const res = await fetch(`/api/mercadorias?codend=${encodeURIComponent(codigoEnd)}&idmerc=${encodeURIComponent(codmerc)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ quantidade: quant })
+      });
+      if (!res.ok) {
+        throw new Error(`Falha ao acertar quantidade!`);
+      }
+      const data = await res.status;
+      console.log(data);
+      if (data == 200) {
+        setAcertook(true);
+        setTimeout(() => {
+          setAcertook(false);
+        }, 1500)
+        FiltrarEndereco(mercadoriaSelecionada[1]);
+      }
+      isInserindo ? await PostQuant(quant, codigoEnd, codmerc) : await PostQuant(quant);
+      setIsInserindo(false);
+    }
+    catch (err) {
+      throw new Error(`Request failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    setIsacertando(false);
+  }
+
+  function mudarCodigo(codigo: string) {
+    LimparInputs(true);
+    setCodigoleitor(codigo);
+    setCodigoLido(true);
+  }
+
+  function desativarLeitor() {
+    setLeitorativo(false);
+  }
+
+  async function PostQuant(quant: string, codigoend?: string, idmerc?: string) {
+    try {
+      const res = await fetch(`/api/mercadorias`, {
+        method: 'POST',
+        body: JSON.stringify({ codend: codigoend ? codigoend : mercadoriaSelecionada[1], idmerc: idmerc ? idmerc : mercadoriaSelecionada[0], quantidade: quant, user: usuarioLogado })
+      });
+      if (res.status != 200) {
+        throw new Error(`Falha ao lançar informação na tabela de movimento!`);
+      }
+      const data = await res.status;
+      console.log(data);
+    }
+    catch (err) {
+      throw new Error(`Request failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  function HandleListItemClick(e: React.MouseEvent<HTMLLIElement>) {
+    let idMerc = e.currentTarget.getAttribute('data-id') ?? '';
+    let codEnder = e.currentTarget.getAttribute('data-codend') ?? '';
+    let descMerc = e.currentTarget.getAttribute('data-desc') ?? '';
+    setMercadoriaSelecionada([idMerc, codEnder, descMerc]);
+  }
+
+  function HandleLerCodigoButton() {
+    LimparInputs(false);
+    leitorativo ? setLeitorativo(false) : setLeitorativo(true);
+    setMercadorias([]);
+  }
+
+  async function FazerLogin(senha: string, apelido: string) {
+    try {
+      const res = await fetch(`api/usuarios?senha=${encodeURIComponent(senha)}&apelido=${encodeURIComponent(apelido)}`, {
+        method: 'GET',
+      });
+      if (!res.ok) {
+        throw new Error('Usuário não encontrado no banco de dados!');
+      }
+      const result = await res.json();
+      if (!result || (Array.isArray(result) && result.length === 0) || (typeof result === 'object' && Object.keys(result).length === 0)) {
+        alert('Usuário não encontrado no banco de dados!');
+        return;
+      }
+      setUsuarioLogado(result[0]['id_funcionario']);
+    }
+    catch (err) {
+      throw new Error(`Request failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  function SemMercadorias() {
+    setMercadorias([0]);
+    setTimeout(() => {
+      setMercadorias([-1]);
+    }, 1500)
+  }
+
+  async function HandleExcluir(confirmar: boolean) {
+    if (confirmar) {
+      const res = await fetch(`/api/mercadorias?codend=${encodeURIComponent(mercadoriaSelecionada[1])}&idmerc=${encodeURIComponent(mercadoriaSelecionada[0])}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ quantidade: '0' })
+      });
+      if (!res.ok) {
+        alert('Falha ao excluir mercadoria!');
+        
+    setIsExcluindo(false);
+        throw new Error(`Falha ao excluir mercadoria!`);
+      }
+      const data = await res.status;
+      console.log(data);
+      if (data == 200) {
+        setAcertook(true);
+        setTimeout(() => {
+          setAcertook(false);
+        }, 1500)
+        FiltrarEndereco(mercadoriaSelecionada[1]);
+      }
+      await PostQuant('0', mercadoriaSelecionada[1], mercadoriaSelecionada[0]);
+    }
+    setIsExcluindo(false);
+  }
+
+  async function FiltrarEndereco(endcode = '', { rua = undefined, edi = undefined, andar = undefined, apto = undefined, dep = undefined }: { rua?: string; edi?: string; andar?: string; apto?: string; dep?: string; } = {}) {
+    try {
+      setMercadoriaSelecionada([]);
+      const codigo = endcode || codigoEnd;
+      const prua = rua !== undefined ? rua : endereco.rua;
+      const pedi = edi !== undefined ? edi : endereco.edi;
+      const pandar = andar !== undefined ? andar : endereco.andar;
+      const papto = apto !== undefined ? apto : endereco.apto;
+      const pdep = dep !== undefined ? dep : endereco.dep;
+      const res = await fetch(`/api/endereco?codend=${encodeURIComponent(codigo)}&rua=${encodeURIComponent(prua)}&edi=${encodeURIComponent(pedi)}&andar=${encodeURIComponent(pandar)}&apto=${encodeURIComponent(papto)}&dep=${encodeURIComponent(pdep)}`, {
+        method: 'GET',
+      });
+      if (!res.ok) {
+        alert('Endereço não encontrado!');
+        return;
+      }
+      const data = await res.json();
+      console.log(data);
+      if (data.length == 0) {
+        alert('Endereço não encontrado!');
+        return;
+      };
+      if (inputRefs.current[0]) {inputRefs.current[0].value = data[0]['rua']};
+      if (inputRefs.current[1]) {inputRefs.current[1].value = data[0]['predio']};
+      if (inputRefs.current[2]) {inputRefs.current[2].value = data[0]['nivel']};
+      if (inputRefs.current[3]) {inputRefs.current[3].value = data[0]['apto']};
+      if (inputRefs.current[4]) {inputRefs.current[4].value = data[0]['coddeposito']};
+      if (codigoInputRef.current) codigoInputRef.current.value = data[0]['codenderecomer'];
+      setEndereco({ rua: data[0]['rua'], edi: data[0]['predio'], andar: data[0]['nivel'], apto: data[0]['apto'], dep: data[0]['coddeposito'] });
+      setIsReadOnly(true);
+      setCodigoend(data[0]['codenderecomer']);
+      setMercadoriasEAceitaInsercao(data);
+    }
+    catch (err) {
+      throw new Error(`Request failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  function setMercadoriasEAceitaInsercao(data: any){
+    if (data.length > 0 && (data.filter((m: any) => Number(m.quantidade) > 0).length > 0)) { 
+      setMercadorias(data);
+      if (data[0]['coddeposito'] == '99'){
+        setdepAceitaInserir(true);
+        return;
+      }
+      setdepAceitaInserir(false);
+      return;
+    } 
+      SemMercadorias();
+      setdepAceitaInserir(true);
+  }
+
+  function LimparInputs(leitor?: boolean) {
+    let index = 0;
+    if (inputRefs.current) {
+      inputRefs.current.forEach(el => {
+        if (el && index != 4) el.value = '';
+        index++;
+      });
+    }
+    if (codigoInputRef.current && !leitor) {
+      codigoInputRef.current.value = '';
+    }
+    setIsReadOnly(false);
+    setEndereco({...endereco, rua: '', edi: '', andar: '', apto: ''});
+    setCodigoend('');
+    setMercadorias([]);
+  }
+
+  function HandleInputClick(){
+    if (isReadOnly) alert('Clique no botão limpar para conseguir editar os campos!');
+  }
+
+  return (
+    <div className="h-svh max-h-svh w-svw max-w-svw bg-orange-200">
+      {loginEfetuado && <LoginSuccess ID={usuarioLogado}></LoginSuccess>}
+      {usuarioLogado == '' && <Login onConfirm={FazerLogin}></Login>}
+      {isAcertando && <Acerto onConfirm={AcertarQuant}></Acerto>}
+      {isInserindo && <Inserir onConfirm={AcertarQuant}></Inserir>}
+      {acertook && <AcertoSuccess></AcertoSuccess>}
+      {inserirok && <InserirSuccess></InserirSuccess>}
+      {confirmation && <CodigoSucess></CodigoSucess>}
+      {(mercadorias[0] == 0) && <SemMercadoria></SemMercadoria>}
+      {isExcluindo && <ExcluirConfirm nomeMerc={mercadoriaSelecionada[0] + '-' + mercadoriaSelecionada[2]} onConfirm={HandleExcluir}></ExcluirConfirm>}
+      <main className="flex flex-col h-full w-full justify-items-center items-stretch bg-[#1c2c2c] text-white">
+        <div className="mt-5 flex flex-col items-center">
+          <div className="flex flex-row w-full items-center text-center">
+            <label className="text-sm">Código do endereço:</label>
+            <input type="number" ref={codigoInputRef} placeholder="Digite ou leia o código de barras" readOnly = {isReadOnly} onClick={HandleInputClick}
+              className={`placeholder-gray-600 ${codigoEnd == '' ? 'italic' : 'not-italic'} text-center bg-[#cbd0d2] text-black p-1 rounded-sm border-1 m-1 border-orange-600 max-w-full w-full`}
+              onChange={(e) => {setCodigoend(e.currentTarget.value); if (e.currentTarget.value.length == 7) {LimparInputs(true); FiltrarEndereco(e.currentTarget.value, {rua: '', edi: '', andar: '', apto: '', dep: '' })}}}>
+            </input>
+            <button onClick={HandleLerCodigoButton} className=" px-3 rounded-xl bg-orange-600 text-white text-sm h-10 mr-2">Abrir Leitor</button>
+          </div>
+          <div className="flex flex-row">
+            <div className="flex flex-col mx-2 w-2/10 ">
+              <label className="text-sm">Rua</label>
+              <input key={'rua'} onChange={(e) => { setEndereco({ ...endereco, rua: e.currentTarget.value }) }} type="number" readOnly = {isReadOnly} onClick={HandleInputClick}
+                ref={(el) => { inputRefs.current[0] = el }} className="placeholder-gray-300 bg-[#cbd0d2] text-center text-black p-1 rounded-sm border-1 border-orange-600 w-full"></input>
+            </div>
+            <div className="flex flex-col mx-2 w-2/10 ">
+              <label className="text-sm">Edifício</label>
+              <input key={'edi'} onChange={(e) => { setEndereco({ ...endereco, edi: e.currentTarget.value }) }} type="number" readOnly = {isReadOnly} onClick={HandleInputClick}
+                ref={(el) => { inputRefs.current[1] = el }} className="placeholder-gray-300 bg-[#cbd0d2] text-center text-black p-1 rounded-sm border-1 border-orange-600 w-full"></input>
+            </div>
+            <div className="flex flex-col mx-2 w-2/10 ">
+              <label className="text-sm">Andar</label>
+              <input key={'andar'} onChange={(e) => { setEndereco({ ...endereco, andar: e.currentTarget.value }) }} type="number" readOnly = {isReadOnly} onClick={HandleInputClick}
+                ref={(el) => { inputRefs.current[2] = el }} className="placeholder-gray-300 bg-[#cbd0d2] text-center text-black p-1 rounded-sm border-1 border-orange-600 w-full"></input>
+            </div>
+            <div className="flex flex-col mx-2 w-2/10 ">
+              <label className="text-sm">Apto</label>
+              <input key={'apto'} onChange={(e) => { setEndereco({ ...endereco, apto: e.currentTarget.value }) }} type="number" readOnly = {isReadOnly} onClick={HandleInputClick}
+                ref={(el) => { inputRefs.current[3] = el }} className="placeholder-gray-300 bg-[#cbd0d2] text-center text-black p-1 rounded-sm border-1 border-orange-600 w-full"></input>
+            </div>
+            <div className="flex flex-col mx-2 w-2/10">
+              <label className="text-sm">Deposito</label>
+              <input key={'dep'} onChange={(e) => { setEndereco({ ...endereco, dep: e.currentTarget.value }) }} type="number" readOnly = {isReadOnly} onClick={HandleInputClick}
+                ref={(el) => { inputRefs.current[4] = el }} className="placeholder-gray-300 bg-[#cbd0d2] text-center text-black p-1 rounded-sm border-1 border-orange-600 w-full"></input>
+            </div>
+          </div>
+          <div className="flex flex-row gap-2">
+            <button onClick={() => FiltrarEndereco()} className="p-2 rounded-xl mt-2 bg-orange-600 text-white w-20" >Buscar</button>
+            <button onClick={() => LimparInputs()} className="p-2 rounded-xl mt-2 bg-orange-600 text-white w-20" >Limpar</button>
+          </div>
+        </div>
+        <div className="flex-1 max-w-full p-1 rounded-sm border-1 m-2 border-orange-600 bg-[#cbd0d2]">
+          {leitorativo && <Leitor desativar={desativarLeitor} mudarCodigo={mudarCodigo} isOpen={leitorativo}></Leitor>}
+          {(mercadorias.length > 0) &&
+            <div className="flex flex-cols-3 w-full text-black font-bold justify-between">
+              <p>Cód Merc</p>
+              <p>Nome</p>
+              <p>Quantidade</p>
+            </div>}
+          {(mercadorias.length > 0) &&
+            <ol>
+              {mercadorias[0] != -1 && mercadorias[0] != 0 && mercadorias && mercadorias.filter((m) => Number(m['quantidade']) > 0).map((m) => <li onClick={(e) => { HandleListItemClick(e) }} className={`${(mercadoriaSelecionada[0] == m['id_mercadoria']) ? "bg-gray-400" : "bg-[#cbd0d2]"} border-1 rounded-sm text-black flex flex-cols-3 max-w-full p-3 justify-between`}
+                data-id={m['id_mercadoria']} data-codend={m['codenderecomer']} data-desc={m['descricao']} key={m['id_mercadoria']} >
+                <span className="p-2">{m['id_mercadoria']}</span>
+                <span className="p-2">{m['descricao']}</span>
+                <span className="p-2">{m['quantidade']}</span>
+              </li>)}
+            </ol>}
+        </div>
+        <div className="flex flex-row w-full justify-items-center items-center justify-around content-center px-20 mb-3">
+          <button onClick={() => { (mercadoriaSelecionada.length > 0) ? setIsacertando(true) : alert('Selecione uma mercadoria primeiro!!'); }} 
+          className="py-2 px-4 rounded-xl bg-orange-600 text-white mr-2">Acertar
+          </button>
+          <button onClick={() => { if (!depAceitaInserir) {alert('Endereço já possui mercadoria e o deposito não é o 99!'); return;}; codigoEnd ? setIsInserindo(true) : alert('Digite o código de um endereço primeiro!!'); }} 
+          className="py-2 px-4 rounded-xl bg-orange-600 text-white mr-2">Inserir
+          </button>
+          <button onClick={() => { (mercadoriaSelecionada.length > 0) ? setIsExcluindo(true) : alert('Selecione uma mercadoria primeiro!!'); }} 
+          className="py-2 px-4 rounded-xl bg-orange-600 text-white mr-2">Excluir
+          </button>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
