@@ -169,8 +169,10 @@ export default function Home() {
       }
       const data = await res.status;
       console.log(data);
+      FiltrarEndereco(codigoend ? codigoend : mercadoriaSelecionada[1]);
     }
     catch (err) {
+      FiltrarEndereco(codigoend ? codigoend : mercadoriaSelecionada[1]);
       throw new Error(`Request failed: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
