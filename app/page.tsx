@@ -176,9 +176,9 @@ export default function Home() {
   }
 
   function HandleListItemClick(e: React.MouseEvent<HTMLLIElement>) {
-    let idMerc = e.currentTarget.getAttribute('data-id') ?? '';
-    let codEnder = e.currentTarget.getAttribute('data-codend') ?? '';
-    let descMerc = e.currentTarget.getAttribute('data-desc') ?? '';
+    const idMerc = e.currentTarget.getAttribute('data-id') ?? '';
+    const codEnder = e.currentTarget.getAttribute('data-codend') ?? '';
+    const descMerc = e.currentTarget.getAttribute('data-desc') ?? '';
     setMercadoriaSelecionada([idMerc, codEnder, descMerc]);
   }
 
@@ -278,8 +278,9 @@ export default function Home() {
       throw new Error(`Request failed: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
-
+ // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function setMercadoriasEAceitaInsercao(data: any){
+     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (data.length > 0 && (data.filter((m: any) => Number(m.quantidade) > 0).length > 0)) { 
       setMercadorias(data);
       if (data[0]['coddeposito'] == '99'){
