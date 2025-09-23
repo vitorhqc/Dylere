@@ -172,6 +172,7 @@ export default function Home() {
       FiltrarEndereco(codigoend ? codigoend : mercadoriaSelecionada[1]);
     }
     catch (err) {
+      //Vai vercel
       FiltrarEndereco(codigoend ? codigoend : mercadoriaSelecionada[1]);
       throw new Error(`Request failed: ${err instanceof Error ? err.message : String(err)}`);
     }
