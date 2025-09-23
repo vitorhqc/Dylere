@@ -10,11 +10,10 @@ type LeitorCodigo = {
 }
 
 const Leitor = ({ mudarCodigo, isOpen, desativar }: LeitorCodigo) => {
-  if (!isOpen) return;
-
   const videoRef = useRef<HTMLVideoElement>(null);
   //alert('Antes do Use effect entrou');
   useEffect(() => {
+    if (!isOpen || !videoRef.current) return;
     const codeReader = new BrowserMultiFormatReader();
     //alert('Use effect entrou');
     if (videoRef.current) {

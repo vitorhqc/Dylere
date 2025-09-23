@@ -100,7 +100,7 @@ function QueryEnderecoOnly(db: firebird.Database, codend = '', rua = '', edi = '
     return new Promise((resolve, reject) => {
         let sql = '';
         sql = 'SELECT * FROM WMS_ENDERECO END WHERE 1=1 ';
-        let params: string[] = [];
+        const params: string[] = [];
         if (codend != '') {
             codend = `${codend}`;
             sql += ' AND MEND.CODENDERECOMER = ?';
@@ -136,7 +136,7 @@ function QueryEndereco(db: firebird.Database, codend = '', rua = '', edi = '', a
         let sql = '';
         sql = 'SELECT wms_endereco.codenderecomer,wms_endereco.rua,wms_endereco.predio,wms_endereco.nivel,wms_endereco.apto, wms_endereco.coddeposito,wms_mercadoria_endereco.id_mercadoria,wms_mercadoria_endereco.quantidade, est_mercadoria.descricao FROM wms_endereco left join wms_mercadoria_endereco on wms_mercadoria_endereco.codenderecomer = wms_endereco.codenderecomer left join est_mercadoria  on est_mercadoria.id_mercadoria = wms_mercadoria_endereco.id_mercadoria where 1=1 '
         //sql = 'SELECT MEND.CODENDERECOMER, MEND.ID_MERCADORIA, MERC.DESCRICAO, MEND.QUANTIDADE, WEND.RUA, WEND.PREDIO, WEND.NIVEL, WEND.APTO, WEND.CODDEPOSITO FROM WMS_MERCADORIA_ENDERECO MEND INNER JOIN EST_MERCADORIA MERC ON MERC.ID_MERCADORIA = MEND.ID_MERCADORIA INNER JOIN WMS_ENDERECO WEND ON WEND.CODENDERECOMER = MEND.CODENDERECOMER WHERE 1=1 ';
-        let params: string[] = [];
+        const params: string[] = [];
         if (codend != '') {
             codend = `${codend}`;
             sql += ' AND wms_endereco.CODENDERECOMER = ?';
