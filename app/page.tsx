@@ -98,6 +98,8 @@ export default function Home() {
     }
     try {
       if (isInserindo) {
+        setIsInserindo(false);
+        setIsFiltrando(true);
         const mercsFetch = await fetch(`/api/endereco?codend=${encodeURIComponent(codigoEnd)}&codmerc=${encodeURIComponent(codmerc)}&inserir=true`, {
           method: 'GET'
         });
@@ -118,12 +120,15 @@ export default function Home() {
           const dataPost = await postMerc.status;
           console.log(dataPost);
           setIsInserindo(false);
+          setIsFiltrando(false);
           setInserirok(true);
           setTimeout(() => {
             setInserirok(false);
           }, 1500)
         }
       }
+      setIsacertando(false);
+      setIsFiltrando(true);
       codmerc = codmerc ? codmerc : mercadoriaSelecionada[0];
       const res = await fetch(`/api/mercadorias?codend=${encodeURIComponent(codigoEnd)}&idmerc=${encodeURIComponent(codmerc)}`, {
         method: 'PATCH',
@@ -136,6 +141,7 @@ export default function Home() {
       console.log(data);
       if (data == 200) {
         setAcertook(true);
+        setIsFiltrando(false);
         setTimeout(() => {
           setAcertook(false);
         }, 1500)
