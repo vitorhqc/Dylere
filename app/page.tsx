@@ -229,6 +229,7 @@ export default function Home() {
   async function HandleExcluir(confirmar: boolean) {    
     setIsExcluindo(false);
     if (confirmar) {
+      setIsFiltrando(true);
       const res = await fetch(`/api/mercadorias?codend=${encodeURIComponent(mercadoriaSelecionada[1])}&idmerc=${encodeURIComponent(mercadoriaSelecionada[0])}`, {
         method: 'PATCH',
         body: JSON.stringify({ quantidade: '0' })
@@ -246,7 +247,6 @@ export default function Home() {
         setTimeout(() => {
           setAcertook(false);
         }, 1500)
-        FiltrarEndereco(mercadoriaSelecionada[1]);
       }
       await PostQuant('0', mercadoriaSelecionada[1], mercadoriaSelecionada[0]);
     }
