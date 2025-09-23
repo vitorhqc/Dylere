@@ -12,6 +12,7 @@ import SemMercadoria from "./components/SemMercadoria";
 import Inserir from "./components/Inserir";
 import InserirSuccess from "./components/InserirOK";
 import ExcluirConfirm from "./components/ExcluirConfirm";
+import FiltrandoInfos from "./components/FiltrandoInfo";
 
 const Leitor = dynamic(() => import('@/app/components/Leitor'), {
   ssr: false,
@@ -38,6 +39,7 @@ export default function Home() {
   const [isInserindo, setIsInserindo] = useState(false);
   const [isExcluindo, setIsExcluindo] = useState(false);
   const [depAceitaInserir, setdepAceitaInserir] = useState(true);
+  const [isFiltrando, setIsFiltrando] = useState(false);
 
   useEffect(() => {
     if (codigoLido){
@@ -218,7 +220,8 @@ export default function Home() {
     }, 1500)
   }
 
-  async function HandleExcluir(confirmar: boolean) {
+  async function HandleExcluir(confirmar: boolean) {    
+    setIsExcluindo(false);
     if (confirmar) {
       const res = await fetch(`/api/mercadorias?codend=${encodeURIComponent(mercadoriaSelecionada[1])}&idmerc=${encodeURIComponent(mercadoriaSelecionada[0])}`, {
         method: 'PATCH',
@@ -241,11 +244,11 @@ export default function Home() {
       }
       await PostQuant('0', mercadoriaSelecionada[1], mercadoriaSelecionada[0]);
     }
-    setIsExcluindo(false);
   }
 
   async function FiltrarEndereco(endcode = '', { rua = undefined, edi = undefined, andar = undefined, apto = undefined, dep = undefined }: { rua?: string; edi?: string; andar?: string; apto?: string; dep?: string; } = {}) {
     try {
+      setIsFiltrando(true);
       setMercadoriaSelecionada([]);
       const codigo = endcode || codigoEnd;
       const prua = rua !== undefined ? rua : endereco.rua;
@@ -257,12 +260,14 @@ export default function Home() {
         method: 'GET',
       });
       if (!res.ok) {
+        setIsFiltrando(false);
         alert('Endereço não encontrado!');
         return;
       }
       const data = await res.json();
       console.log(data);
       if (data.length == 0) {
+        setIsFiltrando(false);
         alert('Endereço não encontrado!');
         return;
       };
@@ -274,10 +279,12 @@ export default function Home() {
       if (codigoInputRef.current) codigoInputRef.current.value = data[0]['codenderecomer'];
       setEndereco({ rua: data[0]['rua'], edi: data[0]['predio'], andar: data[0]['nivel'], apto: data[0]['apto'], dep: data[0]['coddeposito'] });
       setIsReadOnly(true);
+      setIsFiltrando(false);
       setCodigoend(data[0]['codenderecomer']);
       setMercadoriasEAceitaInsercao(data);
     }
     catch (err) {
+      setIsFiltrando(false);
       throw new Error(`Request failed: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
@@ -320,6 +327,7 @@ export default function Home() {
 
   return (
     <div className="h-svh max-h-svh w-svw max-w-svw bg-orange-200">
+      {isFiltrando && <FiltrandoInfos></FiltrandoInfos>}
       {loginEfetuado && <LoginSuccess ID={usuarioLogado}></LoginSuccess>}
       {usuarioLogado == '' && <Login onConfirm={FazerLogin}></Login>}
       {isAcertando && <Acerto onConfirm={AcertarQuant}></Acerto>}
