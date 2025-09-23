@@ -145,7 +145,6 @@ export default function Home() {
         setTimeout(() => {
           setAcertook(false);
         }, 1500)
-        FiltrarEndereco(mercadoriaSelecionada[1]);
       }
       isInserindo ? await PostQuant(quant, codigoEnd, codmerc) : await PostQuant(quant);
       setIsInserindo(false);
@@ -168,6 +167,7 @@ export default function Home() {
 
   async function PostQuant(quant: string, codigoend?: string, idmerc?: string) {
     try {
+      setIsFiltrando(true);
       const res = await fetch(`/api/mercadorias`, {
         method: 'POST',
         body: JSON.stringify({ codend: codigoend ? codigoend : mercadoriaSelecionada[1], idmerc: idmerc ? idmerc : mercadoriaSelecionada[0], quantidade: quant, user: usuarioLogado })
