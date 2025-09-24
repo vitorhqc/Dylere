@@ -61,6 +61,10 @@ export default function Home() {
     }, 1500);*/
   }, [usuarioLogado])
 
+  useEffect(() => {
+    codigoInputRef.current?.focus();
+  }, [])
+
   function HandleConfirmationModal() {
     setConfirmation(true);
 
@@ -325,6 +329,7 @@ export default function Home() {
     setEndereco({...endereco, rua: '', edi: '', andar: '', apto: ''});
     setCodigoend('');
     setMercadorias([]);
+    codigoInputRef.current?.focus();
   }
 
   function HandleInputClick(){
