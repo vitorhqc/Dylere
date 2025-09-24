@@ -56,7 +56,6 @@ export default function Home() {
   useEffect(() => {
     console.log(usuarioLogado);
     setLoginEfetuado(true);
-    codigoInputRef.current?.focus();
     /*setTimeout(() => {
       setLoginEfetuado(false);
     }, 1500);*/
