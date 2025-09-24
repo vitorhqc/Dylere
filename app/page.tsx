@@ -56,14 +56,11 @@ export default function Home() {
   useEffect(() => {
     console.log(usuarioLogado);
     setLoginEfetuado(true);
+    codigoInputRef.current?.focus();
     /*setTimeout(() => {
       setLoginEfetuado(false);
     }, 1500);*/
   }, [usuarioLogado])
-
-  useEffect(() => {
-    codigoInputRef.current?.focus();
-  }, [])
 
   function HandleConfirmationModal() {
     setConfirmation(true);
