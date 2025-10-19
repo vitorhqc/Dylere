@@ -110,8 +110,9 @@ export default function Home() {
             body: JSON.stringify({ codend: codigoEnd, codmerc: codmerc, quant: quant , insert: true})
           });
           if (postMerc.status != 200) {
-            console.log('Erro ao inserir mercadoria!')
-            alert('Erro ao inserir mercadoria! Verifique o código da mercadoria e tente novamente!')
+            console.log('Erro ao inserir mercadoria!');
+            alert('Erro ao inserir mercadoria! Verifique o código da mercadoria e tente novamente!');
+            return;
           }
           if (!postMerc.ok) {
             throw new Error(`Falha ao inserir mercadoria!`);

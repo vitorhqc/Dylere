@@ -45,13 +45,14 @@ export async function POST(Req: NextRequest) {
     const quant = body['quant'] ?? '';
     const inserindo = body['insert'] ?? '';
     const db = await getConnection();
-    const postResult = await PostMercEndereco(db, codEND, codmerc, quant, inserindo);
-    return new Response(JSON.stringify(postResult), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+    try {
+        const postResult = await PostMercEndereco(db, codEND, codmerc, quant, inserindo);    
+        // ✅ Retorna apenas status 200, sem body
+        return new NextResponse(null, { status: 200 });
+      } catch (error) {
+        console.error(error);
+        return NextResponse.json({ erro: "Falha ao inserir" }, { status: 400 });
+      } 
 }
 
 function getConnection(): Promise<firebird.Database> {
