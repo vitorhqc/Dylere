@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 
 type LoginSucess = {
     ID: string,
+    customClass?: string
 }
 
-export default function LoginSuccess({ID}: LoginSucess) {
+export default function LoginSuccess({ID, customClass = ''}: LoginSucess) {
     const [logado, setLogado] = useState('');
 
     useEffect(() => {
@@ -15,7 +16,7 @@ export default function LoginSuccess({ID}: LoginSucess) {
 
     if (logado != '') {
         return (
-            <div className="fixed top-0 right-0 z-50 flex items-center justify-center bg-black/0">
+            <div className={customClass == '' ? "fixed top-0 right-0 z-50 flex items-center justify-center bg-black/0" : customClass}>
             <p className="text-sm text-center text-orange-600">Usuario: {logado}</p>
         </div>
         )
