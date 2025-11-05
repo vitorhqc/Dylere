@@ -36,7 +36,8 @@ function getConnection(): Promise<firebird.Database> {
 
 function QueryVeiculo(db: firebird.Database, placa: string): Promise<any> {
     return new Promise((resolve, reject) => {
-        let sql = 'SELECT PLACA, DESCRICAO FROM WMS_VEICULO WHERE STATUS LIKE ?';
+        let sql = "";
+        sql = 'SELECT PLACA, DESCRICAO FROM WMS_VEICULO WHERE STATUS LIKE ?';
         let params: string[] = [];
         params = ['A'];
         db.query(sql, params, (err, result) => {

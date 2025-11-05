@@ -76,9 +76,9 @@ function InsertVolume(db: firebird.Database, placa: string, volume: string, codu
             placa = `${placa}`;
             volume = `${volume}`;
             coduser = `${coduser}`;
-            let datahora = getDataHora();
-            let data = datahora[0];
-            let hora = datahora[1];
+            const datahora = getDataHora();
+            const data = datahora[0];
+            const hora = datahora[1];
             sql = 'INSERT INTO WMS_CARREGAMENTO_LOTE (PLACA, VOLUME, DATA, HORA, ID_FUNCIONARIO) VALUES (?, ? ,? ,? ,?)';
             params = [placa, volume, data, hora, coduser];
         }
@@ -101,9 +101,9 @@ function updateVolume(db: firebird.Database, placa: string, volume: string, codu
             placa = `${placa}`;
             volume = `${volume}`;
             coduser = `${coduser}`;
-            let datahora = getDataHora();
-            let data = datahora[0];
-            let hora = datahora[1];
+            const datahora = getDataHora();
+            const data = datahora[0];
+            const hora = datahora[1];
             sql = 'UPDATE WMS_CARREGAMENTO_LOTE SET PLACA = ?, DATA = ?, HORA = ?, ID_FUNCIONARIO = ? WHERE VOLUME = ?';
             params = [placa, data, hora, coduser, volume];
         }
