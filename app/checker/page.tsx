@@ -7,6 +7,7 @@ import VolumesItem from "../components/VolumesItem";
 import ListaVolumes from "../components/ListaVolumes";
 import VolumeRepetido from "../components/VolumeRepetido";
 import VeiculoSemVolume from "../components/VeiculoSemVolume";
+import { SegmentBoundaryTriggerNode } from "next/dist/next-devtools/userspace/app/segment-explorer-node";
 
 type Status = 'Erro' | 'Ok' | 'Aguardando...';
 
@@ -31,6 +32,7 @@ export default function Checker() {
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
     const placaCaminhaoRef = useRef<HTMLInputElement>(null);
     const [isReadOnly, setIsReadOnly] = useState(false);
+    const [btnDisabled, setBtnDisabled] = useState(true);
     const [confirmation, setConfirmation] = useState(false);
     const [volumes, setVolumes] = useState<Volume[]>([]);
     const [usuarioLogado, setUsuarioLogado] = useState('');
@@ -97,6 +99,7 @@ export default function Checker() {
     }
 
     function OptionBtn(){
+        setBtnDisabled(false);
         setVolumes([]);
         if (placaCaminhaoRef.current) setVeiculoSelecionado(placaCaminhaoRef.current.value);
         const placaVeiculo = placaCaminhaoRef.current?.value ?? null;
@@ -125,6 +128,7 @@ export default function Checker() {
             fetchVolumesPlaca();
             return;
         }
+        setVeiculoSelecionado('');
         alert("Digite uma placa primeiro!");
     }
 
@@ -161,6 +165,10 @@ export default function Checker() {
     }
 
     function ConfirmarVolumeBtn() {
+        if (veiculoSelecionado != '' && (veiculoSelecionado != placaCaminhaoRef.current?.value)){            
+            alert(`Confirme a placa do veiculo! `);
+            return;
+        }
         if (veiculoSelecionado == '') {
             alert('Escolha um veiculo!');
             return;
@@ -171,7 +179,7 @@ export default function Checker() {
                 return;
             }
             const codEtq = codigoInputRef.current.value;
-            codigoInputRef.current.value = codEtq.slice(0, 6) + "-" + codEtq.slice(6);
+            codigoInputRef.current.value = "";
             AdicionarVolume(codEtq || '');
         }
     }
@@ -204,6 +212,14 @@ export default function Checker() {
         setSendFail(true);
     }
 
+    function verificarPlacaBtn() {
+        if (veiculoSelecionado == '' || veiculoSelecionado != placaCaminhaoRef.current?.value) {
+            setBtnDisabled(true);
+            return;
+        }
+        setBtnDisabled(false);
+    }
+
     /*<select onChange={OptionSelect} ref={selectInputRef} className={`placeholder-gray-600 ${placa == "" ? '' : 'uppercase'}  text-center bg-[#cbd0d2] text-black p-1 rounded-sm border-1 m-1 border-orange-600 w-full`}>
                             <option value='' >Selecione o veiculo</option>
                             {veiculos.length > 0 && veiculos.map(v => (<option value={v.placa} key={v.placa}>{v.placa} - {v.descricao}</option>))}
@@ -220,7 +236,7 @@ export default function Checker() {
                 <div className="mt-1 flex flex-col justify-start">
                     <div className="flex flex-row w-[80%] items-center text-center my-1 ml-1">
                         <label className="text-sm">Placa do caminhão:</label>
-                        <input ref={placaCaminhaoRef} onInput={(e) => {e.currentTarget.value = e.currentTarget.value.toLocaleUpperCase();}}
+                        <input ref={placaCaminhaoRef} onInput={(e) => {e.currentTarget.value = e.currentTarget.value.toLocaleUpperCase(); console.log(placaCaminhaoRef.current?.value + '-' + veiculoSelecionado); verificarPlacaBtn();}}
                         className={`placeholder-gray-600 ${isReadOnly ? 'italic' : 'not-italic'} text-center uppercase bg-[#cbd0d2] text-black p-1 rounded-sm border-1 m-1 border-orange-600 max-w-full w-full`}>
                         </input>
                         <button onClick={OptionBtn} className=" px-3 rounded-xl bg-orange-600 text-white text-sm h-10 mr-2">Confirmar</button>
@@ -234,7 +250,7 @@ export default function Checker() {
                             className={`placeholder-gray-600 ${isReadOnly ? 'italic' : 'not-italic'} text-center bg-[#cbd0d2] text-black p-1 rounded-sm border-1 m-1 border-orange-600 max-w-full w-full`}
                             onChange={(e) => {if (e.currentTarget.value.length == 10) ConfirmarVolumeBtn(); }}>
                         </input>
-                        <button onClick={ConfirmarVolumeBtn} className=" px-3 rounded-xl bg-orange-600 text-white text-sm h-10 mr-2">Confirmar</button>
+                        <button disabled={btnDisabled} onClick={ConfirmarVolumeBtn} className={`px-3 rounded-xl bg-orange-600 text-white text-sm h-10 mr-2 disabled:bg-gray-400 disabled:cursor-not-allowed`}>Confirmar</button>
                     </div>
                 </div>
                 <div ref={scrollRef} className="flex-1 max-w-full p-1 relative overflow-auto rounded-sm border-1 mx-2 border-orange-600 bg-[#cbd0d2]">
