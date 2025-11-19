@@ -48,7 +48,7 @@ export default function ListaVolumes({ Volumes, close }: ListaVolumes) {
             <div className="flex flex-col rounded-lg w-full h-full justify-items-center bg-stone-300 p-3 gap-3">
                 <ol className="w-full h-full flex flex-col">
                     {PaginasVolumes[page - 1].length > 0 && PaginasVolumes[page - 1].map(v => <li key={v.codigo} className={`flex rounded-lg my-1 w-full ${(v.status == 'Ok' || v.ok) ? 'bg-green-200' : ((v.status == 'Erro' || !v.ok) ? 'bg-red-200' : 'bg-white')}`}>
-                        <span className="h-[5%] w-4/5 text-left text-black ml-15 font-bold">Cód: {v.codigo}</span>
+                        <span className="h-[5%] w-4/5 text-left text-black ml-15 font-bold">Cód: {v.codigo.slice(0,6) + '-' + v.codigo.slice(6)}</span>
                         <span className="h-[5%] w-1/5 text-black font-bold">{v.status ?? (v.ok ? 'Ok' : 'Erro')}</span>
                         {(v.status == 'Ok' || v.ok === true) && <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="green" 
                         className="size-6 my-auto mr-5">

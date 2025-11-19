@@ -98,19 +98,19 @@ export default function Checker() {
 
     function OptionBtn(){
         setVolumes([]);
-        const placaVeiculo = veiculoSelecionado ? veiculoSelecionado : placaCaminhaoRef.current?.value;
+        if (placaCaminhaoRef.current) setVeiculoSelecionado(placaCaminhaoRef.current.value);
+        const placaVeiculo = placaCaminhaoRef.current?.value ?? null;
         if (placaVeiculo) {
-            console.log(placaVeiculo);
             const fetchVolumesPlaca = async () => {
                 const dataFetch = await fetch(`api/volumes?placa=${encodeURIComponent(placaVeiculo)}`, {
                     method: 'GET',
                 })
                 if (!dataFetch.ok) {
                     alert('Falha ao requisitar volumes do veiculo selecionado!!');
+                    setVeiculoSelecionado('');
                     return;
                 }
                 const dados = await dataFetch.json();
-                console.log(dados);
                 if (dados.length == 0) {
                     setVeiculoSemVolume(true);
                     setTimeout(() => {
@@ -165,13 +165,14 @@ export default function Checker() {
             alert('Escolha um veiculo!');
             return;
         }
-        if (codigoInputRef) {
-            if (codigoInputRef.current?.value == '') {
-                console.log(codigoInputRef.current?.value);
-                alert('Digite um código!')
+        if (codigoInputRef.current) {
+            if (codigoInputRef.current.value == '') {
+                alert('Digite um código!');
                 return;
             }
-            AdicionarVolume(codigoInputRef.current?.value || '');
+            const codEtq = codigoInputRef.current.value;
+            codigoInputRef.current.value = codEtq.slice(0, 6) + "-" + codEtq.slice(6);
+            AdicionarVolume(codEtq || '');
         }
     }
 
@@ -219,7 +220,7 @@ export default function Checker() {
                 <div className="mt-1 flex flex-col justify-start">
                     <div className="flex flex-row w-[80%] items-center text-center my-1 ml-1">
                         <label className="text-sm">Placa do caminhão:</label>
-                        <input ref={placaCaminhaoRef} onInput={(e) => {e.currentTarget.value = e.currentTarget.value.toLocaleUpperCase()}}
+                        <input ref={placaCaminhaoRef} onInput={(e) => {e.currentTarget.value = e.currentTarget.value.toLocaleUpperCase();}}
                         className={`placeholder-gray-600 ${isReadOnly ? 'italic' : 'not-italic'} text-center uppercase bg-[#cbd0d2] text-black p-1 rounded-sm border-1 m-1 border-orange-600 max-w-full w-full`}>
                         </input>
                         <button onClick={OptionBtn} className=" px-3 rounded-xl bg-orange-600 text-white text-sm h-10 mr-2">Confirmar</button>

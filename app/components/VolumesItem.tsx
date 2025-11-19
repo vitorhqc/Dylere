@@ -23,6 +23,7 @@ export default function VolumesItem({ placa, usuarioLogado, Ok, codbarra, change
     const [stat, setStat] = useState<Status>('Aguardando...');
     const jaExecutou = useRef(false);
     const [mouseOnItem, setMouseOnItem] = useState(false);
+    const codHifen = codbarra.slice(0,6) + '-' + codbarra.slice(6);
 
     useEffect(() => {
         postVolume();
@@ -71,7 +72,7 @@ export default function VolumesItem({ placa, usuarioLogado, Ok, codbarra, change
     return (
         <li className="relative max-w-full p-1">
             <div className={`static flex group flex-row rounded-lg w-full h-12 justify-items-center ${stat == 'Ok' ? 'bg-green-200' : (stat == 'Erro' ? 'bg-red-200' : '')}`}>
-                <span className={`text-black font-bold mx-auto my-auto w-[75%] text-left ml-7`}>Cód: {codbarra}</span>
+                <span className={`text-black font-bold mx-auto my-auto w-[75%] text-left ml-7`}>Cód: {codHifen}</span>
                 <span className="text-black mx-auto my-auto w-[25%]"> Status: {stat}</span>
                 {stat == 'Ok' && <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="green" className="size-6 my-auto mr-2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
