@@ -64,7 +64,7 @@ export default function ListaVolumes({ Volumes, close }: ListaVolumes) {
     }
 
     return (
-        <div className="fixed inset-0 z-50 bg-stone-300 flex flex-col h-svh max-h-svh w-svw max-w-md mx-auto ">
+        <div className="fixed inset-0 z-50 bg-stone-300 flex flex-col h-screen w-screen max-w-md mx-auto ">
             <div className="flex flex-col rounded-lg w-full h-full justify-items-center bg-stone-300 p-3 gap-3">
                 <ol className="w-full h-full flex flex-col">
                     {PaginasVolumes[page - 1].length > 0 && PaginasVolumes[page - 1].map(v => <li key={v.codigo} className={`flex rounded-lg my-1 w-full 

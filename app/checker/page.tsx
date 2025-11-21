@@ -225,7 +225,7 @@ export default function Checker() {
                         </select>*/
 
     return (
-        <div className="relative h-svh max-h-svh w-svw max-w-md mx-auto bg-orange-200">
+        <div className="relative h-screen w-screen max-w-md mx-auto bg-orange-200">
             {loginEfetuado && <LoginSuccess ID={usuarioLogado} customClass="absolute top-4 right-3 z-50 flex items-center justify-center bg-black/0 w-20"></LoginSuccess>}
             {usuarioLogado == '' && <Login onConfirm={FazerLogin}></Login>}
             {veiculoSemVolume && <VeiculoSemVolume></VeiculoSemVolume>}
