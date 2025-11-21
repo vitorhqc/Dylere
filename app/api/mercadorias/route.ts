@@ -1,27 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import firebird from "node-firebird"
-
-const dboptions: firebird.Options = {
-
-    host: process.env.host,
-    port: Number(process.env.fbport),
-    database: process.env.databaseKingHost,
-    user: process.env.user,
-    password: process.env.password,
-    lowercase_keys: (process.env.lowercase_keys == 'true'),
-    role: process.env.role,
-    pageSize: Number(process.env.pageSize),
-    retryConnectionInterval: Number(process.env.retryConnectionInterval),
-    blobAsText: (process.env.blobAsText == 'true'),
-    encoding: process.env.encoding as firebird.SupportedCharacterSet,
-
-};
+import { queryFirebird } from "../firebird";
 
 export async function GET(Req: NextRequest) {
    const { searchParams } = new URL(Req.url);
     const idmerc = searchParams.get('id_merc') ?? '';
-    const db = await getConnection();
-    const mercadorias = await QueryMercadoria(db, idmerc);
+    const mercadorias = await QueryMercadoria(idmerc);
     return NextResponse.json(mercadorias);
 }
 
@@ -31,44 +14,26 @@ export async function PATCH(Req: NextRequest){
     const idmerc = searchParams.get('idmerc') ?? '';
     const body = await Req.json();
     const quanti = body['quantidade'];
-    const db = await getConnection();
-    const result = UpdateQuantidade(db, [codend, idmerc, quanti]);
+    const result = UpdateQuantidade([codend, idmerc, quanti]);
     return NextResponse.json(result);
 }
 
 export async function POST(Req: NextRequest){
     const body = await Req.json();
-    console.log(body);
     const quantFinal = body['quantidade'];
-    const db = await getConnection();
-    const quantidade = await PegarQuantidadeTotal(db, [body['codend'], body['idmerc']]);
-    console.log(quantidade);
+    const quantidade = await PegarQuantidadeTotal([body['codend'], body['idmerc']]);
     const quantidadeTotal = Number(quantFinal) - Number(quantidade[0]['qtesaldo']);
-    console.log(quantidadeTotal);
     const datahora = getDataHora();
     const data = datahora[0];
     const hora = datahora[1];
-    const db3 = await getConnection();
-    const wms_idmovimento = await QueryID(db3, ['WMS_MOVIMENTO']);
-    console.log('wms_movimento: ', wms_idmovimento);
-    const dbb = await getConnection();
-    const postResult = await InsertWMSMovimentoItem(dbb, [body['codend'], body['idmerc'], wms_idmovimento[0]['codigo'], body['user'], data, hora, quantidadeTotal.toString()])
-    console.log(postResult);
+    const wms_idmovimento = await QueryID( ['WMS_MOVIMENTO']);
+    const postResult = await InsertWMSMovimentoItem([body['codend'], body['idmerc'], wms_idmovimento[0]['codigo'], body['user'], data, hora, quantidadeTotal.toString()]);
     return new Response(JSON.stringify(postResult), {
         status: 200,
         headers: {
           'Content-Type': 'application/json'
         }
       });
-}
-
-function getConnection(): Promise<firebird.Database> {
-    return new Promise((resolve, reject) => {
-        firebird.attach(dboptions, (err, db) => {
-            if (err) return reject(err);
-            resolve(db);
-        });
-    });
 }
 
 function getDataHora(): string[]{
@@ -87,8 +52,8 @@ function getDataHora(): string[]{
     return [data, hora];
 }
 
-function InsertWMSMovimentoItem(db: firebird.Database, [codend = '', idmerc = '', wms_movimento = '', user = '', data = '', hora = '', quant = '']): Promise<any>  {
-    return new Promise((resolve, reject) => {
+function InsertWMSMovimentoItem( [codend = '', idmerc = '', wms_movimento = '', user = '', data = '', hora = '', quant = '']): Promise<any>  {
+    return new Promise(async (resolve, reject) => {
         let sql = '';
         let params: string[] = [];
         if (codend != '' && idmerc != '' && user != '' && wms_movimento != '') {
@@ -105,17 +70,18 @@ function InsertWMSMovimentoItem(db: firebird.Database, [codend = '', idmerc = ''
         else {
             return reject('Não foi possível fazer o insert na tabela WMS_MOVIMENTO!');
         }
-        db.query(sql, params, (err, result) => {
-            db.detach(); // Always detach
-
-            if (err) return reject(err);
-            resolve(result);
-        });
+        try{
+            const dados = await queryFirebird(sql, params);
+            resolve(dados);
+        }
+        catch (err: any){
+            reject({ error: err });
+        }
     });
 }
 
-function PegarQuantidadeTotal(db: firebird.Database, [codend = '', idmerc = '']): Promise<any>  {
-    return new Promise((resolve, reject) => {
+function PegarQuantidadeTotal( [codend = '', idmerc = '']): Promise<any>  {
+    return new Promise(async (resolve, reject) => {
         let sql = '';
         let params: string[] = [];
         if (codend != '' && idmerc != '') {
@@ -127,17 +93,18 @@ function PegarQuantidadeTotal(db: firebird.Database, [codend = '', idmerc = ''])
         else {
             return reject('Não foi possível atualizar o saldo!');
         }
-        db.query(sql, params, (err, result) => {
-            db.detach(); // Always detach
-
-            if (err) return reject(err);
-            resolve(result);
-        });
+        try{
+            const dados = await queryFirebird(sql, params);
+            resolve(dados);
+        }
+        catch (err: any){
+            reject({ error: err });
+        }
     });
 }
 
-function QueryID(db: firebird.Database, [campo = '']): Promise<any>  {
-    return new Promise((resolve, reject) => {
+function QueryID([campo = '']): Promise<any>  {
+    return new Promise(async (resolve, reject) => {
         let sql = '';
         let params: string[] = [];
         if (campo != '') {
@@ -148,17 +115,18 @@ function QueryID(db: firebird.Database, [campo = '']): Promise<any>  {
         else {
             return reject('Não foi possível atualizar o saldo!');
         }
-        db.query(sql, params, (err, result) => {
-            db.detach(); // Always detach
-
-            if (err) return reject(err);
-            resolve(result);
-        });
+        try{
+            const dados = await queryFirebird(sql, params);
+            resolve(dados);
+        }
+        catch (err: any){
+            reject({ error: err });
+        }
     });
 }
 
-function UpdateQuantidade(db: firebird.Database, [codend = '', idmerc = '', quanti = '']): Promise<any> {
-    return new Promise((resolve, reject) => {
+function UpdateQuantidade([codend = '', idmerc = '', quanti = '']): Promise<any> {
+    return new Promise(async (resolve, reject) => {
         let sql = '';
         let params: string[] = [];
         if (codend != '' && idmerc != '' && quanti != '') {
@@ -171,17 +139,18 @@ function UpdateQuantidade(db: firebird.Database, [codend = '', idmerc = '', quan
         else {
             return reject('Não foi possível atualizar o saldo!');
         }
-        db.query(sql, params, (err, result) => {
-            db.detach(); // Always detach
-
-            if (err) return reject(err);
-            resolve(result);
-        });
+        try{
+            const dados = await queryFirebird(sql, params);
+            resolve(dados);
+        }
+        catch (err: any){
+            reject({ error: err });
+        }
     });
 }
 
-function QueryMercadoria(db: firebird.Database, id: string): Promise<any>{
-    return new Promise((resolve, reject) => {
+function QueryMercadoria( id: string): Promise<any>{
+    return new Promise(async (resolve, reject) => {
         let sql = '';
         let params: string[] = [];
         if (id) {
@@ -192,11 +161,12 @@ function QueryMercadoria(db: firebird.Database, id: string): Promise<any>{
         else {
             return reject('Não foi possível buscar mercadoria!');
         }
-        db.query(sql, params, (err, result) => {
-            db.detach(); // Always detach
-
-            if (err) return reject(err);
-            resolve(result);
-        });
+        try{
+            const dados = await queryFirebird(sql, params);
+            resolve(dados);
+        }
+        catch (err: any){
+            reject({ error: err });
+        }
     });
 }

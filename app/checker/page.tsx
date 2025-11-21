@@ -9,7 +9,7 @@ import VolumeRepetido from "../components/VolumeRepetido";
 import VeiculoSemVolume from "../components/VeiculoSemVolume";
 import { SegmentBoundaryTriggerNode } from "next/dist/next-devtools/userspace/app/segment-explorer-node";
 
-type Status = 'Erro' | 'Ok' | 'Aguardando...';
+type Status = 'Erro' | 'Ok' | 'Aguardando...' | 'Volume not found';
 
 type Volume = {
     codigo: string;
@@ -49,7 +49,6 @@ export default function Checker() {
     const [sendFail, setSendFail] = useState(false);
 
     useEffect(() => {
-        console.log(usuarioLogado);
         setLoginEfetuado(true);
 
         const fetchDados = async () => {
@@ -74,7 +73,6 @@ export default function Checker() {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }        
-        console.log(volumes);
     },[volumes])
 
     useEffect(() => {
@@ -99,6 +97,7 @@ export default function Checker() {
     }
 
     function OptionBtn(){
+        if (codigoInputRef.current) codigoInputRef.current.value = '';
         setBtnDisabled(false);
         setVolumes([]);
         if (placaCaminhaoRef.current) setVeiculoSelecionado(placaCaminhaoRef.current.value);
@@ -239,7 +238,7 @@ export default function Checker() {
                         <input ref={placaCaminhaoRef} onInput={(e) => {e.currentTarget.value = e.currentTarget.value.toLocaleUpperCase(); console.log(placaCaminhaoRef.current?.value + '-' + veiculoSelecionado); verificarPlacaBtn();}}
                         className={`placeholder-gray-600 ${isReadOnly ? 'italic' : 'not-italic'} text-center uppercase bg-[#cbd0d2] text-black p-1 rounded-sm border-1 m-1 border-orange-600 max-w-full w-full`}>
                         </input>
-                        <button onClick={OptionBtn} className=" px-3 rounded-xl bg-orange-600 text-white text-sm h-10 mr-2">Confirmar</button>
+                        <button onClick={() => {OptionBtn(); codigoInputRef.current?.focus();}} className=" px-3 rounded-xl bg-orange-600 text-white text-sm h-10 mr-2">Confirmar</button>
                     </div>
                     <div className="flex flex-row w-full items-center text-center my-1">
                         <label className="text-sm">Código de barra:</label>
@@ -248,7 +247,7 @@ export default function Checker() {
                             pattern="-?[0-9]*" 
                             ref={codigoInputRef} placeholder="Digite ou leia o código de barras" readOnly={isReadOnly} onClick={() => { }}
                             className={`placeholder-gray-600 ${isReadOnly ? 'italic' : 'not-italic'} text-center bg-[#cbd0d2] text-black p-1 rounded-sm border-1 m-1 border-orange-600 max-w-full w-full`}
-                            onChange={(e) => {if (e.currentTarget.value.length == 10) ConfirmarVolumeBtn(); }}>
+                            onChange={(e) => {if (e.currentTarget.value.length == 10) {ConfirmarVolumeBtn(); codigoInputRef.current?.focus();} }}>
                         </input>
                         <button disabled={btnDisabled} onClick={ConfirmarVolumeBtn} className={`px-3 rounded-xl bg-orange-600 text-white text-sm h-10 mr-2 disabled:bg-gray-400 disabled:cursor-not-allowed`}>Confirmar</button>
                     </div>

@@ -1,21 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import firebird from "node-firebird"
-
-const dboptions: firebird.Options = {
-
-    host: process.env.host,
-    port: Number(process.env.fbport),
-    database: process.env.databaseKingHost,
-    user: process.env.user,
-    password: process.env.password,
-    lowercase_keys: (process.env.lowercase_keys == 'true'),
-    role: process.env.role,
-    pageSize: Number(process.env.pageSize),
-    retryConnectionInterval: Number(process.env.retryConnectionInterval),
-    blobAsText: (process.env.blobAsText == 'true'),
-    encoding: process.env.encoding as firebird.SupportedCharacterSet,
-
-};
+import { queryFirebird } from "../firebird";
 
 export async function GET(Req: NextRequest) {
     const { searchParams } = new URL(Req.url);
@@ -29,12 +13,10 @@ export async function GET(Req: NextRequest) {
     const dep = searchParams.get('dep') ?? '';
     const isEndOnly = searchParams.get('end') ?? '';
     if (isEndOnly == 'yes') {
-        const db2 = await getConnection();
-        const enderecoOnly = await QueryEnderecoOnly(db2, codEND, rua, edi, andar, apto, dep)
+        const enderecoOnly = await QueryEnderecoOnly(codEND, rua, edi, andar, apto, dep)
         return NextResponse.json(enderecoOnly);
     }
-    const db = await getConnection();
-    const mercadorias = inserir ? await QueryEnderecoInserir(db, codEND, codmerc) : await QueryEndereco(db, codEND, rua, edi, andar, apto, dep);
+    const mercadorias = inserir ? await QueryEnderecoInserir( codEND, codmerc) : await QueryEndereco( codEND, rua, edi, andar, apto, dep);
     return NextResponse.json(mercadorias);
 }
 
@@ -44,9 +26,8 @@ export async function POST(Req: NextRequest) {
     const codmerc = body['codmerc'] ?? '';
     const quant = body['quant'] ?? '';
     const inserindo = body['insert'] ?? '';
-    const db = await getConnection();
     try {
-        const postResult = await PostMercEndereco(db, codEND, codmerc, quant, inserindo);    
+        const postResult = await PostMercEndereco(codEND, codmerc, quant, inserindo);    
         // ✅ Retorna apenas status 200, sem body
         return new NextResponse(null, { status: 200 });
       } catch (error) {
@@ -55,17 +36,8 @@ export async function POST(Req: NextRequest) {
       } 
 }
 
-function getConnection(): Promise<firebird.Database> {
-    return new Promise((resolve, reject) => {
-        firebird.attach(dboptions, (err, db) => {
-            if (err) return reject(err);
-            resolve(db);
-        });
-    });
-}
-
-function PostMercEndereco(db: firebird.Database, codend = '', id_merc = '', quant = '', inserir = ''){
-    return new Promise((resolve, reject) => {
+function PostMercEndereco(codend = '', id_merc = '', quant = '', inserir = ''){
+    return new Promise(async (resolve, reject) => {
         let sql = '';
         let params: string[] = [];
         try {
@@ -88,17 +60,18 @@ function PostMercEndereco(db: firebird.Database, codend = '', id_merc = '', quan
         else {
             return reject('Não foi possível fazer o insert na tabela WMS_MERCADORIA_ENDERECO!');
         }
-        db.query(sql, params, (err, result) => {
-            db.detach(); // Always detach
-
-            if (err) return reject(err);
-            resolve(result);
-        });
+        try{
+            const dados = await queryFirebird(sql, params);
+            resolve(dados);
+        }
+        catch (err: any){
+            reject({ error: err });
+        }
     });
 }
 
-function QueryEnderecoOnly(db: firebird.Database, codend = '', rua = '', edi = '', andar = '', apto = '', dep = ''): Promise<any> {
-    return new Promise((resolve, reject) => {
+function QueryEnderecoOnly(codend = '', rua = '', edi = '', andar = '', apto = '', dep = ''): Promise<any> {
+    return new Promise(async (resolve, reject) => {
         let sql = '';
         sql = 'SELECT * FROM WMS_ENDERECO END WHERE 1=1 ';
         const params: string[] = [];
@@ -123,17 +96,18 @@ function QueryEnderecoOnly(db: firebird.Database, codend = '', rua = '', edi = '
         if (codend == '' && (rua == '' || edi == '' || andar == '' || apto == '' || dep == '')) {
             return reject('Código em branco!');
         }
-        db.query(sql, params, (err, result) => {
-            db.detach(); // Always detach
-
-            if (err) return reject(err);
-            resolve(result);
-        });
+        try{
+            const dados = await queryFirebird(sql, params);
+            resolve(dados);
+        }
+        catch (err: any){
+            reject({ error: err });
+        }
     });
 }
 
-function QueryEndereco(db: firebird.Database, codend = '', rua = '', edi = '', andar = '', apto = '', dep = ''): Promise<any> {
-    return new Promise((resolve, reject) => {
+function QueryEndereco(codend = '', rua = '', edi = '', andar = '', apto = '', dep = ''): Promise<any> {
+    return new Promise(async (resolve, reject) => {
         let sql = '';
         sql = 'SELECT wms_endereco.codenderecomer,wms_endereco.rua,wms_endereco.predio,wms_endereco.nivel,wms_endereco.apto, wms_endereco.coddeposito,wms_mercadoria_endereco.id_mercadoria,wms_mercadoria_endereco.quantidade, est_mercadoria.descricao FROM wms_endereco left join wms_mercadoria_endereco on wms_mercadoria_endereco.codenderecomer = wms_endereco.codenderecomer left join est_mercadoria  on est_mercadoria.id_mercadoria = wms_mercadoria_endereco.id_mercadoria where 1=1 '
         //sql = 'SELECT MEND.CODENDERECOMER, MEND.ID_MERCADORIA, MERC.DESCRICAO, MEND.QUANTIDADE, WEND.RUA, WEND.PREDIO, WEND.NIVEL, WEND.APTO, WEND.CODDEPOSITO FROM WMS_MERCADORIA_ENDERECO MEND INNER JOIN EST_MERCADORIA MERC ON MERC.ID_MERCADORIA = MEND.ID_MERCADORIA INNER JOIN WMS_ENDERECO WEND ON WEND.CODENDERECOMER = MEND.CODENDERECOMER WHERE 1=1 ';
@@ -159,17 +133,18 @@ function QueryEndereco(db: firebird.Database, codend = '', rua = '', edi = '', a
         if (codend == '' && (rua == '' || edi == '' || andar == '' || apto == '' || dep == '')) {
             return reject('Código em branco!');
         }
-        db.query(sql, params, (err, result) => {
-            db.detach(); // Always detach
-
-            if (err) return reject(err);
-            resolve(result);
-        });
+        try{
+            const dados = await queryFirebird(sql, params);
+            resolve(dados);
+        }
+        catch (err: any){
+            reject({ error: err });
+        }
     });
 }
 
-function QueryEnderecoInserir(db: firebird.Database, codend = '', id_merc = ''): Promise<any> {
-    return new Promise((resolve, reject) => {
+function QueryEnderecoInserir(codend = '', id_merc = ''): Promise<any> {
+    return new Promise(async (resolve, reject) => {
         let sql = '';
         let params: string[] = [];
         if (codend != '') {
@@ -181,11 +156,12 @@ function QueryEnderecoInserir(db: firebird.Database, codend = '', id_merc = ''):
         else {
             return reject('Código em branco!');
         }
-        db.query(sql, params, (err, result) => {
-            db.detach(); // Always detach
-
-            if (err) return reject(err);
-            resolve(result);
-        });
+        try{
+            const dados = await queryFirebird(sql, params);
+            resolve(dados);
+        }
+        catch (err: any){
+            reject({ error: err });
+        }
     });
 }
