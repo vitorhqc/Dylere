@@ -110,17 +110,11 @@ function updateVolume(placa: string, volume: string, coduser: string): Promise<a
 }
 
 function getDataHora(): string[]{
-    const agora = new Date();
-
-    const dia = String(agora.getDate()).padStart(2, '0');
-    const mes = String(agora.getMonth() + 1).padStart(2, '0'); // meses começam do zero!
-    const ano = agora.getFullYear();
+    const agora = new Date().toLocaleString('pt-BR',{
+        timeZone: "America/Sao_Paulo",
+    });
     
-    const horas = String(agora.getHours()).padStart(2, '0');
-    const minutos = String(agora.getMinutes()).padStart(2, '0');
-    const segundos = String(agora.getSeconds()).padStart(2, '0');
-    
-    const data = `${dia}.${mes}.${ano}`;
-    const hora = `${horas}:${minutos}:${segundos}`;
+    const data = agora.substring(0,agora.indexOf(',')).trim().replaceAll('/','.');
+    const hora = agora.substring(agora.indexOf(',') + 1).trim();
     return [data, hora];
 }
