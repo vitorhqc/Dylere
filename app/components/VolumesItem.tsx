@@ -24,13 +24,14 @@ export default function VolumesItem({ placa, usuarioLogado, Ok, codbarra, change
     const [stat, setStat] = useState<Status>('Aguardando...');
     const jaExecutou = useRef(false);
     const [mouseOnItem, setMouseOnItem] = useState(false);
-    const codHifen = codbarra.slice(0, 6) + '-' + codbarra.slice(6);
+    const codHifen = codbarra.slice(0, 7) + '-' + codbarra.slice(7);
 
     useEffect(() => {
         postVolume();
     }, [])
 
     function postVolume() {
+        console.log(codbarra);
         if (jaExecutou.current || isOk) {
             if (isOk) {
                 changeStatus(codbarra, 'Ok');
@@ -47,7 +48,9 @@ export default function VolumesItem({ placa, usuarioLogado, Ok, codbarra, change
             if (!result.ok || result.status != 201) {
                 if (result.status == 401) {
                     changeStatus(codbarra, 'Volume not found');
-                    setError((await result.json()).error || '');
+                    const erro = (await result.json()).error;
+                    setError(erro || '');
+                    console.log(erro);
                     setStat('Volume not found');
                     return;
                 }

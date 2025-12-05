@@ -37,7 +37,7 @@ export default function Checker() {
     const [volumes, setVolumes] = useState<Volume[]>([]);
     const [usuarioLogado, setUsuarioLogado] = useState('');
     const [loginEfetuado, setLoginEfetuado] = useState(false);
-    const [placa, setPlaca] = useState("");
+    const [novoPedido, setnovoPedido] = useState("");
     const [codBarra, setCodBarra] = useState("");
     const [listaVolOpen, setIsListaVolOpen] = useState(false);
     const [volumesFalhos, setVolumesFalhos] = useState<Volume[]>([]);
@@ -73,6 +73,10 @@ export default function Checker() {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }        
+        if (novoPedido != ''){
+            AdicionarVolume(novoPedido);
+            setnovoPedido('');
+        }
     },[volumes])
 
     useEffect(() => {
@@ -96,6 +100,33 @@ export default function Checker() {
           ));
     }
 
+    async function fetchVolumesPlaca(volume = '', novopedido = '') {
+        const placaVeiculo = placaCaminhaoRef.current?.value ?? '';
+        let fetchUrl = `api/volumes?placa=${encodeURIComponent(placaVeiculo)}`;
+        if (volume != '' && novopedido != ''){
+            fetchUrl = `api/volumes?placa=${encodeURIComponent(placaVeiculo)}&volume=${encodeURIComponent(volume)}&novopedido=${encodeURIComponent(novopedido)}`;
+        }
+        const dataFetch = await fetch(fetchUrl, {
+            method: 'GET',
+        })
+        if (!dataFetch.ok) {
+            alert('Falha ao requisitar volumes do veiculo selecionado!!');
+            setVeiculoSelecionado('');
+            return;
+        }
+        const dados = await dataFetch.json();
+        if (dados.length == 0) {
+            setVeiculoSemVolume(true);
+            setTimeout(() => {
+                setVeiculoSemVolume(false);
+            }, 1500)
+        }
+        setVolumes(dados.map((d: any) => ({
+            codigo: d.volume,
+            ok: true,
+        })))
+    }
+
     function OptionBtn(){
         if (codigoInputRef.current) codigoInputRef.current.value = '';
         setBtnDisabled(false);
@@ -103,27 +134,6 @@ export default function Checker() {
         if (placaCaminhaoRef.current) setVeiculoSelecionado(placaCaminhaoRef.current.value);
         const placaVeiculo = placaCaminhaoRef.current?.value ?? null;
         if (placaVeiculo) {
-            const fetchVolumesPlaca = async () => {
-                const dataFetch = await fetch(`api/volumes?placa=${encodeURIComponent(placaVeiculo)}`, {
-                    method: 'GET',
-                })
-                if (!dataFetch.ok) {
-                    alert('Falha ao requisitar volumes do veiculo selecionado!!');
-                    setVeiculoSelecionado('');
-                    return;
-                }
-                const dados = await dataFetch.json();
-                if (dados.length == 0) {
-                    setVeiculoSemVolume(true);
-                    setTimeout(() => {
-                        setVeiculoSemVolume(false);
-                    }, 1500)
-                }
-                setVolumes(dados.map((d: any) => ({
-                    codigo: d.volume,
-                    ok: true,
-                })))
-            }
             fetchVolumesPlaca();
             return;
         }
@@ -179,8 +189,17 @@ export default function Checker() {
             }
             const codEtq = codigoInputRef.current.value;
             codigoInputRef.current.value = "";
-            AdicionarVolume(codEtq || '');
+            verificarNovoPedido(codEtq);
         }
+    }
+
+    function verificarNovoPedido(codVol: string){
+        if (codVol.substring(0,7) != volumes[volumes.length - 1].codigo.substring(0,7)){
+            fetchVolumesPlaca(codVol.substring(0,7), 'true');
+            setnovoPedido(codVol);
+            return;
+        }        
+        AdicionarVolume(codVol || '');
     }
 
     function IncrementarKey(): string {

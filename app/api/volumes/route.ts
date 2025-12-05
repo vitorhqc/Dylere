@@ -5,7 +5,8 @@ export async function GET(Req: NextRequest) {
    const { searchParams } = new URL(Req.url);
     const placa = searchParams.get('placa') ?? '';
     const volume = searchParams.get('volume') ?? '';
-    const volumes = await QueryVolumesFromPlaca(placa, volume);
+    const novoPedido = searchParams.get('novopedido') ?? '';
+    const volumes = await QueryVolumesFromPlaca(placa, volume, novoPedido);
     return NextResponse.json(volumes);
 }
 
@@ -28,7 +29,7 @@ export async function POST(Req: NextRequest){
       }   
 }
 
-function QueryVolumesFromPlaca(placa: string, volume = ''): Promise<any>{
+function QueryVolumesFromPlaca(placa: string, volume = '', novopedido = ''): Promise<any>{
     return new Promise(async (resolve, reject) => {
         let sql = '';
         let params: string[] = [];
@@ -36,9 +37,9 @@ function QueryVolumesFromPlaca(placa: string, volume = ''): Promise<any>{
             placa = `${placa}`;            
             sql = `SELECT VOLUME FROM WMS_CARREGAMENTO_LOTE WHERE PLACA = ? AND STATUS = 'A'`;
             params = [placa];
-            if (volume != ''){
-                volume = `${volume}`;
-                sql += ' AND VOLUME = ?';
+            if (volume != '' && novopedido != ''){
+                volume = `%${volume}%`;
+                sql += ' AND VOLUME LIKE ?';
                 params = [placa, volume];
             }
         }
