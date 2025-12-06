@@ -35,7 +35,7 @@ function QueryVolumesFromPlaca(placa: string, volume = '', novopedido = ''): Pro
         let params: string[] = [];
         if (placa != '') {
             placa = `${placa}`;            
-            sql = `SELECT VOLUME FROM WMS_CARREGAMENTO_LOTE WHERE PLACA = ? AND STATUS = 'A'`;
+            sql = `SELECT VOLUME FROM WMS_CARREGAMENTO_LOTE WHERE PLACA = ? AND STATUS = 'A' ORDER BY VOLUME`;
             params = [placa];
             if (volume != '' && novopedido != ''){
                 volume = `%${volume}%`;
@@ -45,6 +45,28 @@ function QueryVolumesFromPlaca(placa: string, volume = '', novopedido = ''): Pro
         }
         else {
             return reject('Código em branco!');
+        }
+        try{
+            const dados = await queryFirebird(sql, params);
+            resolve(dados);
+        }
+        catch (err: any){
+            reject({ error: err });
+        }
+    });
+}
+
+function QueryVolumesFromPlacaePedido(placa: string, pedido: string): Promise<any>{
+    return new Promise(async (resolve, reject) => {
+        let sql = '';
+        let params: string[] = [];
+        if (placa != '') {
+            pedido = `%${pedido}%`        
+            sql = `SELECT CODSEPARACAO FROM WMS_CARREGAMENTO_LOTE WHERE PLACA = ? AND VOLUME LIKE ? AND STATUS = 'A'`;
+            params = [placa, pedido];
+        }
+        else {
+            return reject({error: 'Placa em branco!'});
         }
         try{
             const dados = await queryFirebird(sql, params);

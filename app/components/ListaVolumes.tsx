@@ -17,8 +17,8 @@ export default function ListaVolumes({ Volumes, close }: ListaVolumes) {
 
     const [page, setPage] = useState(1);
     const [limiteAtingido, setLimiteAtingido] = useState(0); //0 = Ambos NAO atingidos, 1 = Pagina anterior no limite, 2 = Pagina posterior no limite, 3 = AMBOS no limite;
-
-    const volumePorPagina = 20;
+    Volumes.sort((a, b) => a.codigo.localeCompare(b.codigo));
+    const volumePorPagina = 15;
     const quantPaginas = Math.ceil(Volumes.length / volumePorPagina);
     const PaginasVolumes: Volume[][] = [];
     for (let i = 0; i < Volumes.length; i += volumePorPagina) {
@@ -27,6 +27,7 @@ export default function ListaVolumes({ Volumes, close }: ListaVolumes) {
     }
     
     useEffect(() => {
+        
         if (quantPaginas == 1){
             setLimiteAtingido(3);
         }
@@ -69,8 +70,8 @@ export default function ListaVolumes({ Volumes, close }: ListaVolumes) {
                 <ol className="w-full h-full flex flex-col">
                     {PaginasVolumes[page - 1].length > 0 && PaginasVolumes[page - 1].map(v => <li key={v.codigo} className={`flex rounded-lg my-1 w-full 
                     ${(v.status == 'Ok' || v.ok) ? 'bg-green-200' : ((v.status == 'Erro' || (!v.ok && v.status != 'Volume not found')) ? 'bg-red-200' : 'bg-orange-300')}`}>
-                        <span className="h-[5%] w-4/5 text-left text-black ml-15 font-bold">Cód: {v.codigo.slice(0,6) + '-' + v.codigo.slice(6)}</span>
-                        <span className="h-[5%] w-1/5 text-black font-bold">{v.status == 'Volume not found' ? 'Erro' : (v.ok ? 'Ok' : 'Erro')}</span>
+                        <span className="h-[5%] w-4/5 text-left text-black ml-15 font-bold">Cód: {v.codigo.slice(0,7) + '-' + v.codigo.slice(7)}</span>
+                        <span className="h-[5%] w-1/5 text-black font-bold">{v.status == 'Volume not found' ? 'Erro' : (v.ok || v.status == 'Ok' ? 'Ok' : 'Erro')}</span>
                         {(v.status == 'Ok' || v.ok === true) && <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="green" 
                         className="size-6 my-auto mr-5">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />

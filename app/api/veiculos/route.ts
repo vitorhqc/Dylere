@@ -12,9 +12,9 @@ export async function GET(Req: NextRequest) {
 function QueryVeiculo( placa: string): Promise<any> {
     return new Promise(async (resolve, reject) => {
         let sql = "";
-        sql = 'SELECT PLACA, DESCRICAO FROM WMS_VEICULO WHERE STATUS LIKE ?';
+        sql = `SELECT PLACA FROM WMS_PLACA WHERE STATUS LIKE 'A'`;
         let params: string[] = [];
-        params = ['A'];
+        params = [];
         try{
             const dados = await queryFirebird(sql, params);
             resolve(dados);
