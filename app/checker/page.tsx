@@ -7,7 +7,6 @@ import VolumesItem from "../components/VolumesItem";
 import ListaVolumes from "../components/ListaVolumes";
 import VolumeRepetido from "../components/VolumeRepetido";
 import VeiculoSemVolume from "../components/VeiculoSemVolume";
-import { SegmentBoundaryTriggerNode } from "next/dist/next-devtools/userspace/app/segment-explorer-node";
 
 type Status = 'Erro' | 'Ok' | 'Aguardando...' | 'Volume not found';
 
@@ -17,8 +16,11 @@ type Volume = {
     status?: string;
     ok?: boolean;
     difKey?: string;
+    lido?: number;
     changeStatus: (cod: string, newStatus: Status) => void;
 };
+
+type VolumeExibido = Omit<Volume, 'changeStatus'>;
 
 type Veiculos = {
     placa: string;
@@ -29,19 +31,15 @@ export default function Checker() {
     const scrollRef = useRef<HTMLDivElement>(null);
     const codigoInputRef = useRef<HTMLInputElement>(null);
     const selectInputRef = useRef<HTMLSelectElement>(null);
-    const selectPedidoRef = useRef<HTMLSelectElement>(null);
-    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
     const placaCaminhaoRef = useRef<HTMLInputElement>(null);
     const [pedidoSelecionado, setPedidoSelecionado] = useState('');
     const [isReadOnly, setIsReadOnly] = useState(false);
     const [btnDisabled, setBtnDisabled] = useState(true);
     const [confirmation, setConfirmation] = useState(false);
     const [volumes, setVolumes] = useState<Volume[]>([]);
-    const [volumesexibidos, setVolumesexibidos] = useState<Volume[]>([]);
+    const [volumesexibidos, setVolumesexibidos] = useState<VolumeExibido[]>([]);
     const [usuarioLogado, setUsuarioLogado] = useState('');
     const [loginEfetuado, setLoginEfetuado] = useState(false);
-    const [novoPedido, setnovoPedido] = useState("");
-    const [codBarra, setCodBarra] = useState("");
     const [listaVolOpen, setIsListaVolOpen] = useState(false);
     const [volumesFalhos, setVolumesFalhos] = useState<Volume[]>([]);
     const [volumeRepetido, setIsVolumeRepetido] = useState(false);
@@ -52,10 +50,14 @@ export default function Checker() {
     const [sendFail, setSendFail] = useState(false);
     const [pedidos, setPedidos] = useState<any[]>([]);
     const [quantVolumes, setQuantVolumes] = useState(0);
+    const [filtroOpt, setFiltroOpt] = useState(1);
+    const [todosVolumes, setTodosVolumes] = useState<any[]>([]);
+    const [volumesNaoLidos, setVolumesNaoLidos] = useState<VolumeExibido[]>([]);
+    const [totalExibido, setTotalExibido] = useState<VolumeExibido[]>([]);
+    const [GetTodosVolumesOK, setGetTodosVolumesOK] = useState(false);
 
     useEffect(() => {
         setLoginEfetuado(true);
-
         const fetchDados = async () => {
             const dados = await fetch('api/veiculos', {
                 method: 'GET',
@@ -74,27 +76,30 @@ export default function Checker() {
     }, [usuarioLogado]);
 
     useEffect(() => {
+        setPedidos([]);
         setPedidoSelecionado('');
-        if (veiculoSelecionado != 'Selecione a placa' && veiculoSelecionado != ''){
+        if (veiculoSelecionado != 'Selecione a placa' && veiculoSelecionado != '') {
             fetchVolumesPlaca(veiculoSelecionado);
             setBtnDisabled(false);
             codigoInputRef.current?.focus()
             return;
         }
         setBtnDisabled(true);
-    },[veiculoSelecionado]);
+    }, [veiculoSelecionado]);
 
     useEffect(() => {
+        const exibidoFiltro = totalExibido.slice();
+        console.log(exibidoFiltro);
+        console.log()
         if (pedidoSelecionado == '' || pedidoSelecionado == 'all') {
-            setVolumesexibidos(volumes);
+            setVolumesexibidos(exibidoFiltro);
             return;
         }
-        setVolumesexibidos(volumes.filter((vol) => vol.codpedido == pedidoSelecionado));
-    },[pedidoSelecionado])
+        setVolumesexibidos(exibidoFiltro.filter((vol) => vol.codpedido == pedidoSelecionado));
+    }, [pedidoSelecionado, totalExibido])
 
     useEffect(() => {
-        if (pedidoSelecionado == '' || pedidoSelecionado == 'all') setVolumesexibidos(volumes);
-        else setVolumesexibidos(volumes.filter(v => v.codpedido == pedidoSelecionado));
+        console.log('volumes alterados!');
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
@@ -110,10 +115,23 @@ export default function Checker() {
             setPedidos(pedidoss);
             return;
         }
-        if (!pedidos.includes(volumes[volumes.length - 1].codigo.substring(0,7))){
-            setPedidos((p) => [...p, volumes[volumes.length - 1].codigo.substring(0,7)]);
+        if (!pedidos.includes(volumes[volumes.length - 1].codigo.substring(0, 7))) {
+            setPedidos((p) => [...p, volumes[volumes.length - 1].codigo.substring(0, 7)]);
+        }
+        //Trecho que compara e retira os volumes lidos dos NAO lidos caso algum volume que seja lido esteja entre os NAO lidos
+        if (volumes.length - quantVolumes == 1) {
+            let ultimoVol = volumes[volumes.length - 1];
+            if (ultimoVol.codigo in volumesNaoLidos && (ultimoVol.ok || ultimoVol.status == 'Ok')) {
+                setVolumesNaoLidos((prev) => prev.filter((p) => { p.codigo != ultimoVol.codigo }));
+            }
         }
     }, [volumes])
+
+    useEffect(() => {
+        if (pedidos.length == 0) return;
+        console.log('e a iporra tnc')
+        getVolumesPorCodigo();
+    }, [pedidos])
 
     useEffect(() => {
         if (sendFail) {
@@ -129,6 +147,21 @@ export default function Checker() {
             setSendFail(false);
         }
     }, [sendFail])
+
+    useEffect(() => {
+        //Compara TODOS VOLUMES DE TODOS PEDIDOS PRESENTE NA PLACA DO VEICULO E separa os que já foram lidos dos que ainda não foram
+        let onlyCodVolumes: string[] = volumes.map((v) => v.codigo);
+        let onlyCodTodosVolumes: string[] = todosVolumes.map((v) => v.volume);
+        let setOnlyCodVolumes = new Set(onlyCodVolumes);
+        let naolidos: string[] = onlyCodTodosVolumes.filter((c) => !setOnlyCodVolumes.has(c));
+        let naoLidos: VolumeExibido[] = [];
+        naolidos.forEach(vol => {
+            naoLidos.push({ codigo: vol, difKey: vol, codpedido: vol.substring(0, 7), ok: true, status: 'Volume not found', lido: 0 });
+        });
+        setVolumesNaoLidos(naoLidos);
+        const vols = [...volumes, ...naoLidos].sort((a, b) => a.codigo.localeCompare(b.codigo));
+        setTotalExibido(vols);
+    }, [todosVolumes, volumes])
 
     function ChangeStatus(cod: string, newStatus: Status) {
         setVolumes(prev => prev.map(v =>
@@ -157,11 +190,13 @@ export default function Checker() {
                 setVeiculoSemVolume(false);
             }, 1500)
         }
-        setPedidos([]);
+        console.log(dados);
         setVolumes(dados.map((d: any) => ({
             codigo: d.volume,
-            codpedido: d.volume.substring(0,7),
+            codpedido: d.volume.substring(0, 7),
             ok: true,
+            lido: 1,
+            status: 'Ok',
         })))
     }
 
@@ -209,7 +244,7 @@ export default function Checker() {
             }
             setVolumes(prev => prev.filter(v => v != volume));
         }
-        setVolumes(prev => [...prev, { difKey: IncrementarKey(), codpedido: codped, codigo: cod, status: 'Aguardando...', changeStatus: ChangeStatus }])
+        setVolumes(prev => [...prev, { difKey: IncrementarKey(), codpedido: codped, codigo: cod, status: 'Aguardando...', changeStatus: ChangeStatus, lido: 1 }])
     }
 
     function ConfirmarVolumeBtn() {
@@ -223,9 +258,9 @@ export default function Checker() {
                 return;
             }
             const codEtq = codigoInputRef.current.value;
-            codigoInputRef.current.value = "";            
-            AdicionarVolume(codEtq || '', codEtq.substring(0,7));
-            setPedidoSelecionado(codEtq.substring(0,7));
+            codigoInputRef.current.value = "";
+            AdicionarVolume(codEtq || '', codEtq.substring(0, 7));
+            setPedidoSelecionado(codEtq.substring(0, 7));
         }
     }
 
@@ -277,8 +312,24 @@ export default function Checker() {
 
     }
 
-    function onSelectPedidoChange() {
-
+    async function getVolumesPorCodigo() {
+        let fetchUrl = 'api/volumes?volCod=1&';
+        pedidos.forEach((p) => {
+            fetchUrl = fetchUrl + `cod=${p}&`
+        })
+        if (fetchUrl[fetchUrl.length - 1] == '&') {
+            fetchUrl = fetchUrl.slice(0, fetchUrl.length - 1);
+        }
+        const data = await fetch(fetchUrl, {
+            method: 'GET',
+        });
+        if (!data.ok) {
+            return;
+        }
+        const volumesss = await data.json();
+        console.log(volumesss);
+        console.log(volumes);
+        setTodosVolumes(volumesss);
     }
 
     return (
@@ -292,11 +343,11 @@ export default function Checker() {
                 <div className="mt-1 flex flex-col justify-start">
                     <div className="flex flex-row w-[80%] items-center text-center my-1 ml-1 gap-2">
                         <label className="text-sm">Placa do caminhão:</label>
-                        <select className="bg-[#cbd0d2] text-black rounded-sm border border-orange-600 gap-2" value={veiculoSelecionado} onChange={(s) => {setVeiculoSelecionado(s.currentTarget.value);}}>
-                        <option className="text-black" value={'Selecione a placa'}>Selecione a placa</option>
+                        <select className="bg-[#cbd0d2] text-black rounded-sm border border-orange-600 gap-2" value={veiculoSelecionado} onChange={(s) => { setVeiculoSelecionado(s.currentTarget.value); }}>
+                            <option className="text-black" value={'Selecione a placa'}>Selecione a placa</option>
                             {veiculos.length > 0 && veiculos.map((veic) => <option className="text-black" key={veic.placa}>{veic.placa}</option>)}
                         </select>
-                       { /*<input ref={placaCaminhaoRef} onInput={(e) => { e.currentTarget.value = e.currentTarget.value.toLocaleUpperCase(); console.log(placaCaminhaoRef.current?.value + '-' + veiculoSelecionado); verificarPlacaBtn(); }}
+                        { /*<input ref={placaCaminhaoRef} onInput={(e) => { e.currentTarget.value = e.currentTarget.value.toLocaleUpperCase(); console.log(placaCaminhaoRef.current?.value + '-' + veiculoSelecionado); verificarPlacaBtn(); }}
                             className={`placeholder-gray-600 ${isReadOnly ? 'italic' : 'not-italic'} text-center uppercase bg-[#cbd0d2] text-black p-1 rounded-sm border-1 m-1 border-orange-600 max-w-full w-full`}>
                         </input>*/}
                         {/*<button onClick={() => { OptionBtn(); codigoInputRef.current?.focus(); }} className=" px-3 rounded-xl bg-orange-600 text-white text-sm h-10 mr-2">Confirmar</button>*/}
@@ -304,33 +355,41 @@ export default function Checker() {
                     <div className="flex flex-row w-full items-center text-center my-1">
                         <label className="text-sm">Código de barra:</label>
                         <input type="text"
-                            onClick={() => {if (btnDisabled) alert('Selecione uma placa!!')}}
+                            onClick={() => { if (btnDisabled) alert('Selecione uma placa!!') }}
                             inputMode="numeric"
                             pattern="-?[0-9]*"
-                            ref={codigoInputRef} placeholder="Digite ou leia o código de barras" readOnly={btnDisabled} 
+                            ref={codigoInputRef} placeholder="Digite ou leia o código de barras" readOnly={btnDisabled}
                             className={`placeholder-gray-600 ${btnDisabled ? 'italic' : 'not-italic'} text-center bg-[#cbd0d2] text-black p-1 rounded-sm border-1 m-1 border-orange-600 max-w-full w-full`}
                             onChange={(e) => { if (e.currentTarget.value.length == 10) { ConfirmarVolumeBtn(); codigoInputRef.current?.focus(); } }}>
                         </input>
-                        <button disabled={btnDisabled} onClick={ConfirmarVolumeBtn} className={`px-3 rounded-xl bg-orange-600 text-white text-sm h-10 mr-2 disabled:bg-gray-400 disabled:cursor-not-allowed`}>Confirmar</button>
+                        <button disabled={btnDisabled} onClick={ConfirmarVolumeBtn} className={`px-3 rounded-md bg-orange-600 text-white text-sm h-10 mr-2 disabled:bg-gray-400 disabled:cursor-not-allowed`}>Confirmar</button>
                     </div>
                     <div className="flex flex-row w-full justify-center items-center text-center my-1 gap-2">
                         <label className="text-md">Número do Pedido:</label>
-                        <select className="bg-[#cbd0d2] text-black rounded-sm border border-orange-600" value={pedidoSelecionado} onChange={(s) => {setPedidoSelecionado(s.currentTarget.value);}}>
+                        <select className="bg-[#cbd0d2] text-black text-sm rounded-sm border border-orange-600" value={pedidoSelecionado} onChange={(s) => { setPedidoSelecionado(s.currentTarget.value); }}>
                             <option className="text-black" value={'all'}>Todos</option>
-                            {pedidos.length > 0 && pedidos.map((ped) => <option className="text-black" key={ped}>{ped}</option>)}
+                            {pedidos.length > 0 && pedidos.map((ped) => <option className="text-black" value={ped} key={ped}>{ped}</option>)}
+                        </select>
+                        <label className="text-md">Mostrar:</label>
+                        <select className="bg-[#cbd0d2] text-black text-sm rounded-sm border border-orange-600" value={filtroOpt} onChange={(s) => { setFiltroOpt(Number(s.currentTarget.value)) }}>
+                            <option className="text-black" value={1}>Somente lidos</option>
+                            <option className="text-black" value={0}>Não lidos</option>
+                            <option className="text-black" value={2}>Todos</option>
                         </select>
                     </div>
                 </div>
                 <div ref={scrollRef} className="flex-1 max-w-full p-1 relative overflow-auto rounded-sm border-1 mx-2 border-orange-600 bg-[#cbd0d2]">
                     {(volumesexibidos.length > 0) &&
                         <ol className="">
-                            {volumesexibidos.length > 0 && volumesexibidos.map(v => <VolumesItem changeStatus={ChangeStatus} key={v.difKey ? v.difKey : v.codigo}
-                                placa={veiculoSelecionado} usuarioLogado={usuarioLogado} codbarra={v.codigo} Ok={v.ok || v.status == 'Ok' ? true : false}></VolumesItem>)}
+                            {volumesexibidos.length > 0 && volumesexibidos.filter((v) => (filtroOpt != 2 ? v.lido == filtroOpt : v)).map(v => <VolumesItem changeStatus={ChangeStatus} key={v.difKey ? v.difKey : v.codigo}
+                                placa={veiculoSelecionado} usuarioLogado={usuarioLogado} status={v.status ? v.status as Status : 'Aguardando...'} codbarra={v.codigo} Ok={v.ok || v.status == 'Ok' ? true : false}
+                                lido={v.status == 'Volume not found' ? false : true}></VolumesItem>)}
                         </ol>}
                 </div>
                 <div className="flex flex-row w-full p-2">
-                    <button onClick={() => { setIsListaVolOpen(true) }} className="px-3 rounded-xl bg-orange-600 w-30 mx-auto text-white text-sm h-10">Listar Volumes</button>
-                    <button onClick={() => { reenviarFalhos() }} className="px-3 rounded-xl bg-orange-600 w-30 mx-auto text-white text-sm h-10">Reenviar volumes falhos</button>
+                    <button onClick={() => { setIsListaVolOpen(true) }} className="px-3 rounded-md bg-orange-600 w-30 mx-auto text-white text-sm h-10">Listar Volumes</button>
+                    <button onClick={() => { getVolumesPorCodigo() }} className="px-3 rounded-md bg-orange-600 w-30 mx-auto text-white text-sm h-10">All Volumes</button>
+                    <button onClick={() => { reenviarFalhos() }} className="px-3 rounded-md bg-orange-600 w-30 mx-auto text-white text-sm h-10">Reenviar volumes falhos</button>
                 </div>
             </main>
         </div>

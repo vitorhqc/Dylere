@@ -13,15 +13,17 @@ type VolumesItemProps = {
     placa: string;
     usuarioLogado: string;
     changeStatus: (cod: string, newStatus: Status) => void;
+    status? : Status;
     Ok?: boolean;
+    lido?: boolean;
 } & Volumes;
 
-export default function VolumesItem({ placa, usuarioLogado, Ok, codbarra, changeStatus }: VolumesItemProps) {
+export default function VolumesItem({ placa, usuarioLogado, Ok, codbarra, changeStatus, lido, status }: VolumesItemProps) {
 
     const [isOk, setIsOk] = useState(Ok || false);
     const [isErro, setIsErro] = useState(false);
     const [error, setError] = useState('');
-    const [stat, setStat] = useState<Status>('Aguardando...');
+    const [stat, setStat] = useState<Status>(status ? status : 'Aguardando...');
     const jaExecutou = useRef(false);
     const [mouseOnItem, setMouseOnItem] = useState(false);
     const codHifen = codbarra.slice(0, 7) + '-' + codbarra.slice(7);
@@ -31,11 +33,13 @@ export default function VolumesItem({ placa, usuarioLogado, Ok, codbarra, change
     }, [])
 
     function postVolume() {
-        console.log(codbarra);
+        if (status != 'Aguardando...') return;
         if (jaExecutou.current || isOk) {
             if (isOk) {
-                changeStatus(codbarra, 'Ok');
                 setStat('Ok');
+                return;
+                //changeStatus(codbarra, 'Ok');
+                
             }
             return;
         };
@@ -91,7 +95,7 @@ export default function VolumesItem({ placa, usuarioLogado, Ok, codbarra, change
             ${(stat == 'Erro') && 'bg-red-200'}
             ${((stat == 'Volume not found') && 'bg-orange-300')}`}>
                 <span className={`text-black font-bold mx-auto my-auto w-[75%] text-left ml-7`}>Cód: {codHifen}</span>
-                <span className="text-black mx-auto my-auto w-[25%]" onClick={handleStatusClick}> Status: {stat == 'Volume not found' ? 'Erro' : stat}</span>
+                <span className="text-black mx-auto my-auto text-nowrap max-w-[45%] mr-3" onClick={handleStatusClick}> Status: {stat == 'Volume not found' ? 'Não lido' : stat}</span>
                 {stat == 'Ok' && <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="green" className="size-6 my-auto mr-2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                 </svg>}

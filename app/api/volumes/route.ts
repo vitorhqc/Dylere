@@ -6,6 +6,12 @@ export async function GET(Req: NextRequest) {
     const placa = searchParams.get('placa') ?? '';
     const volume = searchParams.get('volume') ?? '';
     const novoPedido = searchParams.get('novopedido') ?? '';
+    const volCod = searchParams.get('volCod') ?? '';
+    const codigos = searchParams.getAll('cod') ?? [];
+    if (volCod == '1') {
+        const volumes = await QueryAllVolumesFromCod(codigos);
+        return NextResponse.json(volumes);
+    }
     const volumes = await QueryVolumesFromPlaca(placa, volume, novoPedido);
     return NextResponse.json(volumes);
 }
@@ -35,7 +41,7 @@ function QueryVolumesFromPlaca(placa: string, volume = '', novopedido = ''): Pro
         let params: string[] = [];
         if (placa != '') {
             placa = `${placa}`;            
-            sql = `SELECT VOLUME FROM WMS_CARREGAMENTO_LOTE WHERE PLACA = ? AND STATUS = 'A' ORDER BY VOLUME`;
+            sql = `SELECT TRIM(VOLUME) AS VOLUME FROM WMS_CARREGAMENTO_LOTE WHERE PLACA = ? AND STATUS = 'A' ORDER BY VOLUME`;
             params = [placa];
             if (volume != '' && novopedido != ''){
                 volume = `%${volume}%`;
@@ -56,18 +62,27 @@ function QueryVolumesFromPlaca(placa: string, volume = '', novopedido = ''): Pro
     });
 }
 
-function QueryVolumesFromPlacaePedido(placa: string, pedido: string): Promise<any>{
+function QueryAllVolumesFromCod(cod: string[]): Promise<any>{
     return new Promise(async (resolve, reject) => {
-        let sql = '';
-        let params: string[] = [];
-        if (placa != '') {
-            pedido = `%${pedido}%`        
-            sql = `SELECT CODSEPARACAO FROM WMS_CARREGAMENTO_LOTE WHERE PLACA = ? AND VOLUME LIKE ? AND STATUS = 'A'`;
-            params = [placa, pedido];
+        const cods: string[] = [];
+        if (cod != null) {
+            cod.forEach((c) => {
+                cods.push(`VOLUME LIKE '${c}%'`);
+            });
         }
         else {
-            return reject({error: 'Placa em branco!'});
+            return reject({error: 'Cod em branco!'});
         }
+        let volumeLike = '';
+        cods.forEach((c, index) => {
+            if (index == cods.length - 1){
+                volumeLike = volumeLike + c;
+                return;
+            }
+            volumeLike = volumeLike + c + ' OR ';
+        })
+        let sql = `SELECT TRIM(VOLUME) AS VOLUME FROM WMS_CARREGAMENTO_LOTE WHERE STATUS = 'A' AND (${volumeLike}) ORDER BY VOLUME`;
+        let params: string[] = [];
         try{
             const dados = await queryFirebird(sql, params);
             resolve(dados);
