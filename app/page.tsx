@@ -409,7 +409,7 @@ export default function Home() {
           <button onClick={() => { (mercadoriaSelecionada.length > 0) ? setIsacertando(true) : alert('Selecione uma mercadoria primeiro!!'); }} 
           className="py-2 px-4 rounded-xl bg-orange-600 text-white mr-2">Acertar
           </button>
-          <button onClick={() => { if (!depAceitaInserir) {alert('Endereço já possui mercadoria e o deposito não é o 99!'); return;}; codigoEnd ? setIsInserindo(true) : alert('Digite o código de um endereço primeiro!!'); }} 
+          <button onClick={() => { if (!depAceitaInserir && (inputRefs.current[4]?.value != '99')) {alert('Endereço já possui mercadoria e o deposito não é o 99!'); return;}; codigoEnd ? setIsInserindo(true) : alert('Digite o código de um endereço primeiro!!'); }} 
           className="py-2 px-4 rounded-xl bg-orange-600 text-white mr-2">Inserir
           </button>
           <button onClick={() => { (mercadoriaSelecionada.length > 0) ? setIsExcluindo(true) : alert('Selecione uma mercadoria primeiro!!'); }} 
